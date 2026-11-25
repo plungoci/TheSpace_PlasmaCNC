@@ -3,3 +3,6 @@
 *.bin
 __pycache__/
 tests/native/test_native
+
+# full flash backups are kept on purpose
+!backups/**/*.bin

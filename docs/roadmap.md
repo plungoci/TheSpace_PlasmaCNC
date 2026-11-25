@@ -13,7 +13,7 @@
 - [ ] `plasma` module: `$IHS` command (testable on the posix build)
 
 ## Phase 1 - First power-up
-- [ ] Full flash backup of the original MKS firmware (`esptool read_flash 0 0x800000`)
+- [x] Full flash backup of the original MKS firmware - board V2.2 and pendant (`backups/2026-11-25_stock_mks`)
 - [ ] Test Z driver (TMC2209 in J25) on the original firmware
 - [ ] Flash FluidNC v4 (S3), load config, verify motion, limits, probe, SD card
 - [ ] Confirm pendant UART baud rate, run `tools/pendant_sim.py --port ... all` on the pendant connector

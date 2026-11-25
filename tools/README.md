@@ -35,3 +35,11 @@ happen only on the pendant channel.
 
 `sim/native_localfs/config.yaml` and `sim/native_sd/part.nc`: run the simulator from the
 `tools/sim` folder.
+
+## nvs_dump.py
+
+Prints the settings stored in the NVS partition of a full ESP32 flash dump:
+
+```bash
+python tools/nvs_dump.py backups/2026-11-25_stock_mks/placa_mks_backup.bin
+```
