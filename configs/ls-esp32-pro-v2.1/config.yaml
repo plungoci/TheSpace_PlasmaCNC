@@ -108,20 +108,20 @@ sdcard:
   card_detect_pin: NO_PIN   # SD_DET is gpio.10 - enable after checking polarity
   frequency_hz: 8000000
 
-# Plasma torch relay: "Air_assist" output (IO1 -> MOSFET on J4). M3 = torch ON, M5 = OFF.
-Relay:
-  output_pin: gpio.1
-  direction_pin: NO_PIN
-  enable_pin: NO_PIN
-  disable_with_s0: false
-  s0_with_disable: true
-  spinup_ms: 0
-  spindown_ms: 0
+# Plasma torch: FluidNC PlasmaSpindle (experimental upstream).
+# enable_pin = torch start relay on "Air_assist" (IO1 -> MOSFET on J4). M3 = torch ON, M5 = OFF.
+# arc_ok_pin = Arc OK contact from the plasma source on "Flame" input J17 (IO36).
+#   M3 waits up to arc_wait_ms for Arc OK; if Arc OK drops while cutting -> alarm, motion aborted.
+#   Use NO_PIN until the Arc OK signal is wired (otherwise every M3 waits and fails).
+PlasmaSpindle:
+  enable_pin: gpio.1
+  arc_ok_pin: NO_PIN        # later: gpio.36:low (dry contact closing to GND)
+  arc_wait_ms: 1000
   tool_num: 0
   speed_map: 0=0.000% 1=100.000%
 
 # Spare inputs for later (protected, with pull-up on the board):
-#   gpio.36 = Flame (J17)  -> planned "Arc OK" from the plasma source
+#   gpio.36 = Flame (J17)  -> Arc OK (see PlasmaSpindle above)
 #   gpio.38 = Door  (J16)
 #   gpio.48 = free on the module (unprotected) -> THC up/down etc.
 # Other outputs: gpio.35 = PWM laser, gpio.2 = LC (TTL), gpio.42 = buzzer

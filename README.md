@@ -26,9 +26,13 @@ docs/
   hardware/   board pinout, connectors, wiring
   plasma/     IHS, Arc OK, THC notes
   mks-pendant.md   protocol of the MKS handheld pendant
-firmware/     FluidNC fork + plasma modules (coming)
+firmware/     FluidNC (git subtree, v4.1.1) + plasma modules
 tools/        test scripts, pendant simulator (coming)
 ```
+
+## Building
+
+See [docs/building.md](docs/building.md).
 
 ## Roadmap
 
