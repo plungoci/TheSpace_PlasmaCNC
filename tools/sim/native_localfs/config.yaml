@@ -1,0 +1,26 @@
+name: TheSpace sim
+board: simulator
+stepping:
+  engine: Timed
+axes:
+  x:
+    steps_per_mm: 80
+    max_rate_mm_per_min: 6000
+    acceleration_mm_per_sec2: 500
+    max_travel_mm: 1000
+    motor0:
+      null_motor:
+  y:
+    steps_per_mm: 80
+    max_rate_mm_per_min: 6000
+    acceleration_mm_per_sec2: 500
+    max_travel_mm: 1000
+    motor0:
+      null_motor:
+  z:
+    steps_per_mm: 400
+    max_rate_mm_per_min: 1500
+    acceleration_mm_per_sec2: 200
+    max_travel_mm: 80
+    motor0:
+      null_motor:

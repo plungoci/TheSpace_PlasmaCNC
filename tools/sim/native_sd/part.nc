@@ -1,0 +1,16 @@
+(test part: 100x50 rectangle with a 20 mm hole)
+G21 G90
+G0 Z15
+G0 X20 Y10
+M3
+G1 X120 Y10 F2000
+G1 Y60
+G1 X20
+G1 Y10
+M5
+G0 X70 Y45
+M3
+G2 X70 Y45 I0 J-10
+M5
+G0 X0 Y0
+M30

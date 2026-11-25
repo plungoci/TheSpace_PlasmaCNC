@@ -4,8 +4,9 @@ The firmware lives in `firmware/FluidNC` - upstream [FluidNC](https://github.com
 imported as a **git subtree** (squashed), currently at **v4.1.1**.
 
 Project-specific build environments are in `firmware/FluidNC/thespace.ini`
-(included from `platformio.ini` -> `extra_configs`). This is the only upstream file we touch
-for the build; all plasma code will go in separate source files.
+(included from `platformio.ini` -> `extra_configs`). That one line is the only change to an
+upstream file. Our code is in `firmware/FluidNC/FluidNC/src/TheSpace/` - a folder upstream
+does not have, so `git subtree pull` never conflicts with it.
 
 ## Requirements
 
@@ -22,7 +23,29 @@ pio run -e thespace_s3
 Output in `firmware/FluidNC/.pio/build/thespace_s3/` (`firmware.bin`, plus a merged image
 produced by `build_merged.py`).
 
-First verified build (2026-11-25): RAM 36.6 %, Flash 68.6 % of the 3 MB app partition.
+Last verified build (2026-11-25, with the mks_pendant module): RAM 36.6 %, Flash 69.2 % of the 3 MB app partition.
+
+## Unit tests (no hardware, no PlatformIO)
+
+```bash
+make -C tests/native
+```
+
+Tests the pendant line filter and the G-code bounds scanner with the host C++ compiler.
+
+## PC simulator (Linux / WSL)
+
+FluidNC can run as a normal program on a PC. Our modules are included.
+
+```bash
+cd firmware/FluidNC
+pio run -e thespace_linux
+cd ../../tools/sim
+../../firmware/FluidNC/.pio/build/thespace_linux/program -      # type commands, e.g. $MKS/Frame=part.nc
+python ../pendant_sim.py --exec ../../firmware/FluidNC/.pio/build/thespace_linux/program all frame --file part.nc
+```
+
+The simulator reads `native_localfs/config.yaml` and uses `native_sd/` as the SD card.
 
 ## Flash
 

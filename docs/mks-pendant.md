@@ -51,9 +51,63 @@ SD list output format: `[FILE:/%s|SIZE:%d]` (same style as FluidNC).
 `air cool/Enable`, `beep_status`, `Report/StallGuard`, `Current/Run`, `Current/Hold`, `Microsteps`.
 The MKS firmware talks to the X/Y TMC2209 drivers over UART.
 
-## FluidNC plan (`mks_pendant` module)
+## TheSpace `mks_pendant` module
 
-1. Pendant on `uart_channel1` (IO17/IO18).
-2. Accept `[ESP801]<file>` - run a frame of the file's bounding box (or a user macro).
-3. Accept MKS `$50/$53/$54` silently (no error on the pendant screen).
-4. If needed, make the startup banner acceptable to the pendant.
+Code: `firmware/FluidNC/FluidNC/src/TheSpace/` (`MksPendant*`, `MksCommands.cpp`, `GcodeBounds*`).
+
+### Configuration
+
+```yaml
+uart1:
+  txd_pin: gpio.17
+  rxd_pin: gpio.18
+  baud: 115200
+  mode: 8N1
+
+mks_pendant:
+  uart_num: 1
+  allow_spindle: false          # block the pendant's M3/M4 "laser test" buttons
+  ignore_mks_settings: true     # accept and ignore $50/$53/$54
+  frame_feed_mm_per_min: 3000   # speed of [ESP801] frame
+  message_level: Info
+```
+
+Do **not** define `uart_channel1` as well - the module creates its own channel on that UART
+and refuses to start if one already exists.
+
+### What the pendant channel does
+
+| Pendant sends | Result |
+|---|---|
+| `[ESP210]` | rewritten to `$MKS/SDList` -> `[FILE:/name\|SIZE:n]` lines + `[SD Free:.. Used:.. Total:..]` |
+| `M3 ...` / `M4 ...` (laser test buttons) | **ignored** (answer `ok` + info message) unless `allow_spindle: true` |
+| `$50=`, `$53=`, `$54=` | ignored (answer `ok`) |
+| `[ESP801]file` | `$MKS/Frame`: prints `Bounds:(x0,y0), (x1,y1)` and traces the outline, **torch off** |
+| everything else | passed to FluidNC unchanged |
+
+When an SD job ends, the channel sends `SD Print Finish!` (the pendant waits for this text).
+
+### Commands available on every channel (USB, telnet, WebUI)
+
+| Command | Description |
+|---|---|
+| `$MKS/SDList` | SD root listing in the MKS format |
+| `$MKS/Frame=<file>` or `[ESP801]<file>` | Frame an SD file: bounding box of the cutting moves (G1/G2/G3, arcs exact), traced at `frame_feed_mm_per_min` (default 3000). Rapids (G0) are ignored, so a final `G0 X0 Y0` does not enlarge the frame. |
+
+The frame is written to the local filesystem as `mks_frame.nc` and run as a normal job,
+so it can be paused/stopped like any job. It contains no `M3`.
+
+> Difference from the MKS laser firmware: MKS frames with `M3 S5` (a visible laser dot).
+> On a plasma machine that would fire the torch, so TheSpace never does it.
+
+### Notes for the first hardware test
+- FluidNC answers `ok` to `[ESP220]` (run SD file) only **when the job ends**. The MKS
+  firmware may answer immediately - check whether the pendant still shows the job screen.
+- FluidNC's startup banner is `Grbl 4.x [FluidNC v4.x ...]`, not `Grbl_ESP32`. If the pendant
+  does not connect, the banner is the first suspect.
+- Baud rate is still unconfirmed (115200 assumed).
+
+### Testing
+- `tests/native`: unit tests for the line filter and the bounds scanner (`make -C tests/native`).
+- `tools/pendant_sim.py`: sends the pendant's commands over serial, telnet or to the
+  FluidNC PC simulator and checks the answers. See `tools/README.md`.

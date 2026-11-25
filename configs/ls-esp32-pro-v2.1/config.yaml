@@ -84,16 +84,19 @@ probe:
   pin: gpio.37:low
   check_mode_start: true
 
-# MKS pendant (J12/J14: 1=+5V 2=GND 3=TXD1 4=RXD1)
+# MKS pendant (J12/J14: 1=+5V 2=GND 3=TXD1 4=RXD1) - TheSpace mks_pendant module.
+# Do NOT add a uart_channel1 for the same UART.
 uart1:
   txd_pin: gpio.17
   rxd_pin: gpio.18
   baud: 115200                       # to be confirmed (MKS firmware setting "uart baud rate")
   mode: 8N1
 
-uart_channel1:
+mks_pendant:
   uart_num: 1
-  report_interval_ms: 0
+  allow_spindle: false               # pendant "laser test" buttons send M3 = torch ON -> blocked
+  ignore_mks_settings: true          # $50/$53/$54 (MKS WiFi) accepted and ignored
+  frame_feed_mm_per_min: 3000        # [ESP801] frame speed, torch stays off
   message_level: Info
 
 # SD card (wired for 4-bit SDMMC, used in SPI mode). IO9 (SD_VCC_SELECT) stays
