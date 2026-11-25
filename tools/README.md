@@ -43,3 +43,11 @@ Prints the settings stored in the NVS partition of a full ESP32 flash dump:
 ```bash
 python tools/nvs_dump.py backups/2026-11-25_stock_mks/placa_mks_backup.bin
 ```
+
+## serial_listen.py
+
+Listens to a serial port without resetting the ESP32 (DTR/RTS inactive) and logs text + hex with timestamps:
+
+```bash
+python tools/serial_listen.py COM6 115200 pendant_log.txt
+```
