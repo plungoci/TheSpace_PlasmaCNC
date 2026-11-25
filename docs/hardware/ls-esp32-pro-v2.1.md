@@ -94,3 +94,15 @@ On many TMC2209 modules the StepStick "MS3" position is the UART pin - keep SW1 
 
 ## Power
 - Input 12-24 V (J2/J3), 5 V buck (MP1584EN), 3.3 V LDO (AMS1117).
+- **Power switch connector**: open by default - the board stays OFF until an external switch
+  is connected or the two pins (+ / -) are bridged with a wire (MKS manual).
+- USB (CH340) does not power the board; 12-24 V must be connected for the PC to see it.
+
+## MKS pendant with the original MKS firmware
+The screen/pendant port is **disabled by default**. Enable it once over USB
+(115200 baud, e.g. LaserGRBL or any serial terminal): `$47=1`, then power-cycle.
+When connected, the pendant shows a link icon in the upper right corner.
+
+## Board revisions
+The schematic used here is V2.1_002. V2.2 boards (also ESP32-S3-WROOM-1U) are in use;
+no V2.2 schematic is published yet - verify pins before relying on this table for V2.2.
