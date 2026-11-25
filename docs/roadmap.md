@@ -13,6 +13,8 @@
 - [ ] `plasma` module: `$IHS` command (testable on the posix build)
 
 ## Phase 1 - First power-up
+- [x] Pendant connects on stock MKS firmware after `$47=1` + power cycle (link icon shown) - 2026-11-25
+- [ ] Sniff pendant <-> board UART on stock firmware (baud, startup handshake, [ESP220] ok timing)
 - [x] Full flash backup of the original MKS firmware - board V2.2 and pendant (`backups/2026-11-25_stock_mks`)
 - [ ] Test Z driver (TMC2209 in J25) on the original firmware
 - [ ] Flash FluidNC v4 (S3), load config, verify motion, limits, probe, SD card
