@@ -56,6 +56,15 @@ The X and Y TMC2209 are configured **over UART** by the firmware (confirmed on a
 Set 70-85 % of the motor's rated current, e.g. `$X/Current/Run=0.8`, `$Y/Current/Run=0.8`.
 Both Y motor connectors share one driver (parallel) - the current is split between two motors.
 
+### In FluidNC: `tmc_2209_1wire`
+
+Each driver's PDN_UART has its own ESP32 pin (X: IO19, Y: IO20, through a series resistor)
+and MS1/MS2 are pulled high, so both drivers answer at **address 3**. FluidNC's `tmc_2209`
+expects one shared TX/RX bus, so TheSpace adds `tmc_2209_1wire`: one hardware UART
+(`uart2`) whose TX and RX are routed, before each exchange, to the selected driver's pin
+(open-drain + pull-up, single wire). Every `tmc_2209` option works the same; `uart_gpio`
+is the extra one. `stallguard_debug` is not supported. See `configs/ls-esp32-pro-v2.1/config.yaml`.
+
 ## Connectors
 
 ### Pendant - J12 (header) / J14 (RJ)

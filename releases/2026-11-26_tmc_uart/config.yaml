@@ -1,0 +1,165 @@
+# FluidNC v4.x (ESP32-S3) - MKS LS ESP32 PRO V2.1_002 - CNC plasma
+# Pins taken from the official schematic "LS ESP32 PRO V2.1_002 SCH.pdf".
+# Mechanical values (steps/mm, speeds, travel) are EXAMPLES - adjust to your machine.
+# WARNING: back up the original MKS flash before installing FluidNC:
+#   esptool.py --chip esp32s3 -p COMx read_flash 0 0x800000 backup_mks.bin
+
+board: MKS LS ESP32 PRO V2.1
+name: Plasma CNC
+meta: draft 2026-11-24
+
+stepping:
+  engine: TIMED
+  idle_ms: 255          # 255 = motors stay enabled (Z does not drop)
+  pulse_us: 4
+  dir_delay_us: 1
+  disable_delay_us: 0
+
+axes:
+  # XYZ_EN (IO8) is shared by all drivers; TMC2209 ENN: high = disabled
+  shared_stepper_disable_pin: gpio.8
+
+  x:
+    steps_per_mm: 80
+    max_rate_mm_per_min: 8000
+    acceleration_mm_per_sec2: 400
+    max_travel_mm: 1000
+    soft_limits: false
+    homing:
+      cycle: 0                       # 0 = no homing. Set 2 when the limit switch is mounted
+      positive_direction: false
+      mpos_mm: 0
+      feed_mm_per_min: 300
+      seek_mm_per_min: 2000
+    motor0:
+      limit_neg_pin: gpio.39:low     # X- (check polarity with $Limits)
+      hard_limits: false
+      pulloff_mm: 2
+      tmc_2209_1wire:                # on-board X driver, UART on its own pin (PDN_UART -> IO19)
+        uart_num: 2
+        uart_gpio: 19
+        addr: 3                      # MS1/MS2 pulled high on the board
+        r_sense_ohms: 0.110
+        run_amps: 0.8                # Tronxy 4240-23; raise slowly if it skips
+        hold_amps: 0.4
+        microsteps: 16               # steps_per_mm assumes 16
+        run_mode: StealthChop        # quiet like Z; CoolStep = SpreadCycle, more torque at speed
+        homing_mode: StealthChop
+        step_pin: gpio.16
+        direction_pin: gpio.15
+
+  y:
+    steps_per_mm: 80
+    max_rate_mm_per_min: 8000
+    acceleration_mm_per_sec2: 400
+    max_travel_mm: 1000
+    soft_limits: false
+    homing:
+      cycle: 0                       # 0 = no homing. Set 2 when the limit switch is mounted
+      positive_direction: false
+      mpos_mm: 0
+      feed_mm_per_min: 300
+      seek_mm_per_min: 2000
+    motor0:
+      limit_neg_pin: gpio.40:low     # Y-
+      hard_limits: false
+      pulloff_mm: 2
+      tmc_2209_1wire:                # on-board Y driver, UART on its own pin (PDN_UART -> IO20)
+        uart_num: 2
+        uart_gpio: 20
+        addr: 3                      # MS1/MS2 pulled high on the board
+        r_sense_ohms: 0.110
+        run_amps: 0.8                # Tronxy 4240-23; raise slowly if it skips
+        hold_amps: 0.4
+        microsteps: 16               # steps_per_mm assumes 16
+        run_mode: StealthChop        # quiet like Z; CoolStep = SpreadCycle, more torque at speed
+        homing_mode: StealthChop
+        step_pin: gpio.7
+        direction_pin: gpio.6
+
+  z:
+    steps_per_mm: 400
+    max_rate_mm_per_min: 1500
+    acceleration_mm_per_sec2: 200
+    max_travel_mm: 80
+    soft_limits: false
+    homing:
+      cycle: 0                       # 0 = no homing. Set 1 (Z first, up) when the switch is mounted
+      positive_direction: true
+      mpos_mm: 0
+      feed_mm_per_min: 200
+      seek_mm_per_min: 800
+    motor0:
+      limit_pos_pin: gpio.41:low     # board input "Z-", switch mounted at the top
+      hard_limits: false
+      pulloff_mm: 2
+      stepstick:                     # socket J25 (TMC2209 module, microsteps from SW1)
+        step_pin: gpio.5
+        direction_pin: gpio.4
+
+# NPN NO inductive sensor on J18 (pin 3). Board has pull-up to 3V3 + RC filter.
+probe:
+  pin: gpio.37:low
+  check_mode_start: true
+
+# MKS pendant (J12/J14: 1=+5V 2=GND 3=TXD1 4=RXD1) - TheSpace mks_pendant module.
+# Do NOT add a uart_channel1 for the same UART.
+# UART for the on-board X/Y TMC2209 drivers. The pins only reserve IO19/IO20;
+# tmc_2209_1wire re-routes TX+RX to one pin at a time (open-drain, single wire).
+uart2:
+  txd_pin: gpio.19
+  rxd_pin: gpio.20
+  baud: 115200
+  mode: 8N1
+
+uart1:
+  txd_pin: gpio.17
+  rxd_pin: gpio.18
+  baud: 115200                       # MKS default ($46=1)
+  mode: 8N1
+
+mks_pendant:
+  uart_num: 1
+  allow_spindle: false               # pendant "laser test" buttons send M3 = torch ON -> blocked
+  ignore_mks_settings: true          # $50/$53/$54 (MKS WiFi) accepted and ignored
+  frame_feed_mm_per_min: 3000        # [ESP801] frame speed, torch stays off
+  message_level: Info
+
+# SD card (wired for 4-bit SDMMC, used in SPI mode). IO9 (SD_VCC_SELECT) stays
+# unused: pull-down on the board => SD at 3.3 V by default.
+spi:
+  miso_pin: gpio.12   # SD_D0
+  mosi_pin: gpio.14   # SD_CMD
+  sck_pin: gpio.13    # SD_CLK
+
+sdcard:
+  cs_pin: gpio.21     # SD_D3
+  card_detect_pin: NO_PIN   # SD_DET is gpio.10 - enable after checking polarity
+  frequency_hz: 8000000
+
+# Plasma torch: FluidNC PlasmaSpindle (experimental upstream).
+# enable_pin = torch start relay on "Air_assist" (IO1 -> MOSFET on J4). M3 = torch ON, M5 = OFF.
+# arc_ok_pin = Arc OK contact from the plasma source on "Flame" input J17 (IO36).
+#   M3 waits up to arc_wait_ms for Arc OK; if Arc OK drops while cutting -> alarm, motion aborted.
+#   Use NO_PIN until the Arc OK signal is wired (otherwise every M3 waits and fails).
+PlasmaSpindle:
+  enable_pin: gpio.1
+  arc_ok_pin: NO_PIN        # later: gpio.36:low (dry contact closing to GND)
+  arc_wait_ms: 1000
+  tool_num: 0
+  speed_map: 0=0.000% 1=100.000%
+
+# Spare inputs for later (protected, with pull-up on the board):
+#   gpio.36 = Flame (J17)  -> Arc OK (see PlasmaSpindle above)
+#   gpio.38 = Door  (J16)
+#   gpio.48 = free on the module (unprotected) -> THC up/down etc.
+# Other outputs: gpio.35 = PWM laser, gpio.2 = LC (TTL), gpio.42 = buzzer
+
+control:
+  safety_door_pin: NO_PIN
+  reset_pin: NO_PIN
+  feed_hold_pin: NO_PIN
+  cycle_start_pin: NO_PIN
+
+start:
+  must_home: false

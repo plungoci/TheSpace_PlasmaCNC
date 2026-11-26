@@ -35,7 +35,16 @@ axes:
       limit_neg_pin: gpio.39:low     # X- (check polarity with $Limits)
       hard_limits: false
       pulloff_mm: 2
-      stepstick:                     # on-board X driver (U7), standalone mode
+      tmc_2209_1wire:                # on-board X driver, UART on its own pin (PDN_UART -> IO19)
+        uart_num: 2
+        uart_gpio: 19
+        addr: 3                      # MS1/MS2 pulled high on the board
+        r_sense_ohms: 0.110
+        run_amps: 0.8                # Tronxy 4240-23; raise slowly if it skips
+        hold_amps: 0.4
+        microsteps: 16               # steps_per_mm assumes 16
+        run_mode: StealthChop        # quiet like Z; CoolStep = SpreadCycle, more torque at speed
+        homing_mode: StealthChop
         step_pin: gpio.16
         direction_pin: gpio.15
 
@@ -55,7 +64,16 @@ axes:
       limit_neg_pin: gpio.40:low     # Y-
       hard_limits: false
       pulloff_mm: 2
-      stepstick:                     # on-board Y driver (U8)
+      tmc_2209_1wire:                # on-board Y driver, UART on its own pin (PDN_UART -> IO20)
+        uart_num: 2
+        uart_gpio: 20
+        addr: 3                      # MS1/MS2 pulled high on the board
+        r_sense_ohms: 0.110
+        run_amps: 0.8                # Tronxy 4240-23; raise slowly if it skips
+        hold_amps: 0.4
+        microsteps: 16               # steps_per_mm assumes 16
+        run_mode: StealthChop        # quiet like Z; CoolStep = SpreadCycle, more torque at speed
+        homing_mode: StealthChop
         step_pin: gpio.7
         direction_pin: gpio.6
 
@@ -86,6 +104,14 @@ probe:
 
 # MKS pendant (J12/J14: 1=+5V 2=GND 3=TXD1 4=RXD1) - TheSpace mks_pendant module.
 # Do NOT add a uart_channel1 for the same UART.
+# UART for the on-board X/Y TMC2209 drivers. The pins only reserve IO19/IO20;
+# tmc_2209_1wire re-routes TX+RX to one pin at a time (open-drain, single wire).
+uart2:
+  txd_pin: gpio.19
+  rxd_pin: gpio.20
+  baud: 115200
+  mode: 8N1
+
 uart1:
   txd_pin: gpio.17
   rxd_pin: gpio.18

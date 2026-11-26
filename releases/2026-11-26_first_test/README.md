@@ -44,5 +44,5 @@ First boot log: `fluidnc_check_first_boot.txt` (tools/fluidnc_check.py).
 The image's config has homing enabled (Z cycle 1, X/Y cycle 2). Without switches, `$H`
 (pendant Home button) searches up to 1.1 x max travel (~30 s for X/Y) before the
 homing alarm - looks like a hang. Fix on the board:
-`$/axes/x/homing/cycle=0`, `$/axes/y/homing/cycle=0`, `$/axes/z/homing/cycle=0`, `$CO`.
+`$/axes/x/homing/cycle=0`, `$/axes/y/homing/cycle=0`, `$/axes/z/homing/cycle=0`, `$CD=config.yaml`.
 The repo config now ships with `cycle: 0`.

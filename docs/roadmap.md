@@ -35,7 +35,7 @@
 - [ ] Arc OK input on Flame input (IO36) - wire it and set `arc_ok_pin: gpio.36:low`
 
 ## Phase 3 - Advanced
-- [ ] Single-wire UART to on-board TMC2209 X/Y (IO19 / IO20) - **needed**: confirmed on V2.2 that the drivers are configured over UART (current, microsteps); without it FluidNC cannot set their current
+- [x] Single-wire UART to on-board TMC2209 X/Y (IO19 / IO20) - `tmc_2209_1wire` driver (TheSpace/TMC2209OneWire), builds; **to test on the board** - was needed: confirmed on V2.2 that the drivers are configured over UART (current, microsteps); without it FluidNC cannot set their current
 - [ ] Sensorless homing X/Y (DIAG already routed to X-/Y- via R123/R122)
 - [ ] THC: arc voltage (isolated divider / module) -> ADC, Z correction, corner lock
 - [ ] Optional: custom firmware for the pendant (ESP32 + LVGL)
