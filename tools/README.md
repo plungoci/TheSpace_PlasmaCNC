@@ -64,3 +64,11 @@ python tools/grbl_dump_settings.py COM7 settings_mks.txt
 
 Small safe test job for the pendant (no M3, no Z): 50 x 30 mm rectangle + R10 circle,
 frame bounds X10 Y10 - X60 Y40. Copy it to the SD card root.
+
+## fluidnc_check.py
+
+First-boot check: sends `$SS`, `$I`, `$CD`, `$LocalFS/List`, `$MKS/SDList`, `?` and saves the output, with a summary of ERR/WARN lines:
+
+```bash
+python tools/fluidnc_check.py COM4 fluidnc_check.txt
+```
