@@ -51,3 +51,11 @@ Listens to a serial port without resetting the ESP32 (DTR/RTS inactive) and logs
 ```bash
 python tools/serial_listen.py COM6 115200 pendant_log.txt
 ```
+
+## grbl_dump_settings.py
+
+Saves `$I`, `$$`, `$S` and `$CMD` output of the controller to a text file:
+
+```bash
+python tools/grbl_dump_settings.py COM7 settings_mks.txt
+```
