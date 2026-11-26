@@ -31,3 +31,11 @@ python -m esptool --chip esp32s3 --port COM4 --baud 460800 write-flash 0 ../../b
 - On-board X/Y TMC2209 are driven without UART in this build (`stepstick`), so their current
   comes from the board's VREF (MKS manual: about 1.2 A). Keep motor tests short.
 - WiFi: FluidNC default access point (SSID `FluidNC`, WebUI at http://192.168.0.1).
+
+## Result (2026-11-26)
+First boot log: `fluidnc_check_first_boot.txt` (tools/fluidnc_check.py).
+- Boots, loads `config.yaml` from LittleFS, SD card mounted, WebUI works.
+- `$MKS/SDList` -> `[FILE:/test.nc|SIZE:338]`, `[SD Free:14.83 GB ...]` - same as the MKS capture.
+- The MKS pendant shows its link icon.
+- Harmless boot messages: `quad_psram: PSRAM chip is not connected` (the N8 module has no PSRAM),
+  `esp_core_dump_flash: No core dump partition found`.

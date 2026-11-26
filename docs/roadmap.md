@@ -22,7 +22,10 @@
 - [ ] Capture frame (`[ESP801]`) on stock firmware (optional)
 - [x] Full flash backup of the original MKS firmware - board V2.2 and pendant (`backups/2026-11-25_stock_mks`)
 - [ ] Test Z driver (TMC2209 in J25, SW1: 1 ON, 2 ON, 3 OFF = 16 microsteps) on the original firmware - needs `$45=2` (XYZ mode)
-- [ ] Flash FluidNC v4 (S3), load config, verify motion, limits, probe, SD card
+- [x] Flash FluidNC v4 (S3) with config + WebUI (merged image) - boots clean, config loaded, LittleFS OK, SD card OK, WebUI OK (2026-11-26, `releases/2026-11-26_first_test`)
+- [x] Pendant shows the link icon on FluidNC (banner / `$I` accepted)
+- [ ] Pendant on FluidNC: coordinates, jog, SD list, frame, run, laser-test button blocked
+- [ ] Verify motion, limits, probe
 - [ ] Confirm pendant UART baud rate, run `tools/pendant_sim.py --port ... all` on the pendant connector
 - [ ] Test the real pendant: jog -> position -> home -> SD list -> frame -> run (check `[ESP220]` ok timing)
 

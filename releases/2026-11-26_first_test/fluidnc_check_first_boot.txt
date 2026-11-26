@@ -1,0 +1,360 @@
+# FluidNC check on COM4 - 2026-11-26 10:38:17
+
+## output after connecting
+E (394) quad_psram: PSRAM chip is not connected, or wrong PSRAM line mode
+E (407) esp_core_dump_flash: No core dump partition found!
+E (407) esp_core_dump_flash: No core dump partition found!
+[MSG:INFO: uart_channel0 created]
+
+[MSG:RST]
+[MSG:INFO: FluidNC v4.x.x (main-f4b8419b-dirty) https://github.com/plungoci/thespace_plasmacnc]
+[MSG:INFO: Local filesystem is /littlefs]
+[MSG:INFO: Configuration file:config.yaml]
+[MSG:INFO: Machine Plasma CNC]
+[MSG:INFO: Board MKS LS ESP32 PRO V2.1]
+[MSG:INFO: UART1 Tx:gpio.17 Rx:gpio.18 RTS:NO_PIN Baud:115200]
+[MSG:INFO: SPI SCK:gpio.13 MOSI:gpio.14 MISO:gpio.12]
+[MSG:INFO: SD Card cs_pin:gpio.21 detect:NO_PIN freq:8000000]
+[MSG:INFO: Stepping:Timed Pulse:4us Dsbl Delay:0us Dir Delay:1us Idle Delay:255ms]
+[MSG:INFO: Axis count 3]
+[MSG:INFO: Shared stepper disable gpio.8]
+[MSG:INFO: Axis X (-0.013,1000.013)]
+[MSG:INFO:   Motor0]
+[MSG:INFO:     stepstick Step:gpio.16 Dir:gpio.15 Disable:NO_PIN]
+[MSG:INFO:  X Neg Limit gpio.39:low]
+[MSG:INFO: Axis Y (-0.013,1000.013)]
+[MSG:INFO:   Motor0]
+[MSG:INFO:     stepstick Step:gpio.7 Dir:gpio.6 Disable:NO_PIN]
+[MSG:INFO:  Y Neg Limit gpio.40:low]
+[MSG:INFO: Axis Z (-80.003,0.002)]
+[MSG:INFO:   Motor0]
+[MSG:INFO:     stepstick Step:gpio.5 Dir:gpio.4 Disable:NO_PIN]
+[MSG:INFO:  Z Pos Limit gpio.41:low]
+[MSG:INFO: Kinematic system: Cartesian]
+[MSG:INFO: STA SSID is not set]
+[MSG:INFO: AP SSID FluidNC IP 192.168.0.1 mask 255.255.255.0 channel 1]
+[MSG:INFO: AP started]
+[MSG:INFO: WiFi on]
+[MSG:INFO: Ethernet is disabled ($network/type is WiFi)]
+[MSG:INFO: HTTP started on port 80]
+[MSG:INFO: Telnet started on port 23]
+[MSG:INFO: HTTP command registered]
+[MSG:INFO: uart_channel1 created]
+[MSG:INFO: MKS pendant on uart1 torch from pendant:blocked frame feed:3000.000]
+[MSG:INFO: PlasmaSpindle Ena:gpio.1 Arc OK:NO_PIN]
+[MSG:INFO: Probe gpio.37:low]
+
+Grbl 4.x [FluidNC v4.x.x (main-f4b8419b-dirty) (esp32s3-wifi) '$' for help]
+
+## $SS
+[MSG:INFO: FluidNC v4.x.x (main-f4b8419b-dirty) https://github.com/plungoci/thespace_plasmacnc]
+[MSG:INFO: Local filesystem is /littlefs]
+[MSG:INFO: Configuration file:config.yaml]
+[MSG:INFO: Machine Plasma CNC]
+[MSG:INFO: Board MKS LS ESP32 PRO V2.1]
+[MSG:INFO: UART1 Tx:gpio.17 Rx:gpio.18 RTS:NO_PIN Baud:115200]
+[MSG:INFO: SPI SCK:gpio.13 MOSI:gpio.14 MISO:gpio.12]
+[MSG:INFO: SD Card cs_pin:gpio.21 detect:NO_PIN freq:8000000]
+[MSG:INFO: Stepping:Timed Pulse:4us Dsbl Delay:0us Dir Delay:1us Idle Delay:255ms]
+[MSG:INFO: Axis count 3]
+[MSG:INFO: Shared stepper disable gpio.8]
+[MSG:INFO: Axis X (-0.013,1000.013)]
+[MSG:INFO:   Motor0]
+[MSG:INFO:     stepstick Step:gpio.16 Dir:gpio.15 Disable:NO_PIN]
+[MSG:INFO:  X Neg Limit gpio.39:low]
+[MSG:INFO: Axis Y (-0.013,1000.013)]
+[MSG:INFO:   Motor0]
+[MSG:INFO:     stepstick Step:gpio.7 Dir:gpio.6 Disable:NO_PIN]
+[MSG:INFO:  Y Neg Limit gpio.40:low]
+[MSG:INFO: Axis Z (-80.003,0.002)]
+[MSG:INFO:   Motor0]
+[MSG:INFO:     stepstick Step:gpio.5 Dir:gpio.4 Disable:NO_PIN]
+[MSG:INFO:  Z Pos Limit gpio.41:low]
+[MSG:INFO: Kinematic system: Cartesian]
+[MSG:INFO: STA SSID is not set]
+[MSG:INFO: AP SSID FluidNC IP 192.168.0.1 mask 255.255.255.0 channel 1]
+[MSG:INFO: AP started]
+[MSG:INFO: WiFi on]
+[MSG:INFO: Ethernet is disabled ($network/type is WiFi)]
+[MSG:INFO: HTTP started on port 80]
+[MSG:INFO: Telnet started on port 23]
+[MSG:INFO: HTTP command registered]
+[MSG:INFO: uart_channel1 created]
+[MSG:INFO: MKS pendant on uart1 torch from pendant:blocked frame feed:3000.000]
+[MSG:INFO: PlasmaSpindle Ena:gpio.1 Arc OK:NO_PIN]
+[MSG:INFO: Probe gpio.37:low]
+ok
+
+## $I
+[VER:4.x FluidNC v4.x.x (main-f4b8419b-dirty) (esp32s3-wifi) :]
+[OPT:PHS]
+[CLUSTER:16]
+[MSG:Machine: Plasma CNC]
+[MSG:Mode=AP:SSID=FluidNC:IP=192.168.0.1:MAC=82-45-6B-6C-8D-74]
+ok
+
+## $CD
+board: MKS LS ESP32 PRO V2.1
+name: Plasma CNC
+meta: draft 2026-11-24
+stepping: 
+  engine: Timed
+  idle_ms: 255
+  pulse_us: 4
+  dir_delay_us: 1
+  disable_delay_us: 0
+  segments: 12
+
+uart1: 
+  txd_pin: gpio.17
+  rxd_pin: gpio.18
+  rts_pin: NO_PIN
+  cts_pin: NO_PIN
+  baud: 115200
+  mode: 8N1
+  passthrough_baud: 0
+  passthrough_mode: 8E1
+
+spi: 
+  miso_pin: gpio.12
+  mosi_pin: gpio.14
+  sck_pin: gpio.13
+
+sdcard: 
+  cs_pin: gpio.21
+  card_detect_pin: NO_PIN
+  frequency_hz: 8000000
+
+kinematics: 
+  Cartesian: 
+
+axes: 
+  shared_stepper_disable_pin: gpio.8
+  shared_stepper_reset_pin: NO_PIN
+  homing_runs: 2
+  X: 
+    steps_per_mm: 80.000000
+    max_rate_mm_per_min: 8000.000000
+    acceleration_mm_per_sec2: 400.000000
+    max_travel_mm: 1000.000000
+    soft_limits: false
+    idle_disable: true
+    homing: 
+      cycle: 2
+      allow_single_axis: true
+      positive_direction: false
+      mpos_mm: 0.000000
+      feed_mm_per_min: 300.000000
+      seek_mm_per_min: 2000.000000
+      settle_ms: 250
+      seek_scaler: 1.100000
+      feed_scaler: 1.100000
+
+    motor0: 
+      limit_neg_pin: 'gpio.39:low'
+      limit_pos_pin: NO_PIN
+      limit_all_pin: NO_PIN
+      hard_limits: false
+      pulloff_mm: 2.000000
+      stepstick: 
+        step_pin: gpio.16
+        direction_pin: gpio.15
+        disable_pin: NO_PIN
+        ms1_pin: NO_PIN
+        ms2_pin: NO_PIN
+        ms3_pin: NO_PIN
+        reset_pin: NO_PIN
+
+  Y: 
+    steps_per_mm: 80.000000
+    max_rate_mm_per_min: 8000.000000
+    acceleration_mm_per_sec2: 400.000000
+    max_travel_mm: 1000.000000
+    soft_limits: false
+    idle_disable: true
+    homing: 
+      cycle: 2
+      allow_single_axis: true
+      positive_direction: false
+      mpos_mm: 0.000000
+      feed_mm_per_min: 300.000000
+      seek_mm_per_min: 2000.000000
+      settle_ms: 250
+      seek_scaler: 1.100000
+      feed_scaler: 1.100000
+
+    motor0: 
+      limit_neg_pin: 'gpio.40:low'
+      limit_pos_pin: NO_PIN
+      limit_all_pin: NO_PIN
+      hard_limits: false
+      pulloff_mm: 2.000000
+      stepstick: 
+        step_pin: gpio.7
+        direction_pin: gpio.6
+        disable_pin: NO_PIN
+        ms1_pin: NO_PIN
+        ms2_pin: NO_PIN
+        ms3_pin: NO_PIN
+        reset_pin: NO_PIN
+
+  Z: 
+    steps_per_mm: 400.000000
+    max_rate_mm_per_min: 1500.000000
+    acceleration_mm_per_sec2: 200.000000
+    max_travel_mm: 80.000000
+    soft_limits: false
+    idle_disable: true
+    homing: 
+      cycle: 1
+      allow_single_axis: true
+      positive_direction: true
+      mpos_mm: 0.000000
+      feed_mm_per_min: 200.000000
+      seek_mm_per_min: 800.000000
+      settle_ms: 250
+      seek_scaler: 1.100000
+      feed_scaler: 1.100000
+
+    motor0: 
+      limit_neg_pin: NO_PIN
+      limit_pos_pin: 'gpio.41:low'
+      limit_all_pin: NO_PIN
+      hard_limits: false
+      pulloff_mm: 2.000000
+      stepstick: 
+        step_pin: gpio.5
+        direction_pin: gpio.4
+        disable_pin: NO_PIN
+        ms1_pin: NO_PIN
+        ms2_pin: NO_PIN
+        ms3_pin: NO_PIN
+        reset_pin: NO_PIN
+
+control: 
+  safety_door_pin: NO_PIN
+  reset_pin: NO_PIN
+  feed_hold_pin: NO_PIN
+  cycle_start_pin: NO_PIN
+  macro0_pin: NO_PIN
+  macro1_pin: NO_PIN
+  macro2_pin: NO_PIN
+  macro3_pin: NO_PIN
+  fault_pin: NO_PIN
+  estop_pin: NO_PIN
+  homing_button_pin: NO_PIN
+  single_block_pin: NO_PIN
+
+coolant: 
+  flood_pin: NO_PIN
+  mist_pin: NO_PIN
+  delay_ms: 0
+
+probe: 
+  pin: 'gpio.37:low'
+  toolsetter_pin: NO_PIN
+  check_mode_start: true
+  hard_stop: false
+  probe_hard_limit: false
+
+macros: 
+  startup_line0: 
+  startup_line1: 
+  Macro0: 
+  Macro1: 
+  Macro2: 
+  Macro3: 
+  after_homing: 
+  after_reset: 
+  after_unlock: 
+
+start: 
+  must_home: false
+  deactivate_parking: false
+  check_limits: true
+
+parking: 
+  enable: false
+  axis: Z
+  target_mpos_mm: -5.000000
+  rate_mm_per_min: 800.000000
+  pullout_distance_mm: 5.000000
+  pullout_rate_mm_per_min: 250.000000
+
+user_outputs: 
+  analog0_pin: NO_PIN
+  analog1_pin: NO_PIN
+  analog2_pin: NO_PIN
+  analog3_pin: NO_PIN
+  analog0_hz: 5000
+  analog1_hz: 5000
+  analog2_hz: 5000
+  analog3_hz: 5000
+  digital0_pin: NO_PIN
+  digital1_pin: NO_PIN
+  digital2_pin: NO_PIN
+  digital3_pin: NO_PIN
+  digital4_pin: NO_PIN
+  digital5_pin: NO_PIN
+  digital6_pin: NO_PIN
+  digital7_pin: NO_PIN
+
+user_inputs: 
+  digital0_pin: NO_PIN
+  digital1_pin: NO_PIN
+  digital2_pin: NO_PIN
+  digital3_pin: NO_PIN
+  digital4_pin: NO_PIN
+  digital5_pin: NO_PIN
+  digital6_pin: NO_PIN
+  digital7_pin: NO_PIN
+  analog0_pin: NO_PIN
+  analog1_pin: NO_PIN
+  analog2_pin: NO_PIN
+  analog3_pin: NO_PIN
+
+mks_pendant: 
+  uart_num: 1
+  allow_spindle: false
+  ignore_mks_settings: true
+  frame_feed_mm_per_min: 3000.000000
+  message_level: Info
+
+PlasmaSpindle: 
+  enable_pin: gpio.1
+  arc_ok_pin: NO_PIN
+  arc_wait_ms: 1000
+  tool_num: 0
+  speed_map: 0=0.00% 1=100.00%
+  off_on_alarm: false
+  atc: 
+  m6_macro: 
+  s0_with_disable: false
+  disable_with_s0: false
+
+arc_tolerance_mm: 0.002000
+junction_deviation_mm: 0.010000
+verbose_errors: true
+report_inches: false
+enable_parking_override_control: false
+use_line_numbers: false
+planner_blocks: 16
+ok
+
+## $LocalFS/List
+[FILE: config.yaml|SIZE:4425]
+[FILE: favicon.ico|SIZE:1150]
+[FILE: index.html.gz|SIZE:111625]
+[/littlefs Free:1.81 MB Used:132.00 KB Total:1.94 MB]
+ok
+
+## $MKS/SDList
+[FILE:/test.nc|SIZE:338]
+[SD Free:14.83 GB Used:128.00 KB Total:14.83 GB]
+ok
+
+## ?
+<Idle|MPos:0.000,0.000,0.000|FS:0,0|Ov:100,100,100|A:>
+
+## summary: lines with ERR / error / WARN
+verbose_errors: true
