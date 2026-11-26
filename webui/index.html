@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TheSpace PlasmaCNC</title>
+<style>
+/* VOICE work: a machine control panel used at the plasma table, gloves on, at a glance
+   IDEA the operator pendant of an industrial cutting machine: steel housing, lit readouts
+   PICTURE live top view of the cutting bed: plate grid, torch crosshair, job frame, cut trail
+   COLOUR steel black ground, arc blue for motion and position, molten orange for the torch, red stop
+   TYPE system sans for labels, tabular monospace for the coordinate readouts (works offline)
+   LAYOUT laptop: bed view left, readouts + jog right, tabs below; phone: bar, readouts, bed, jog, tabs */
+:root{color-scheme:dark;--bg:#0b0d10;--panel:#13171c;--panel2:#191e24;--edge:#252d35;--ink:#e8edf2;--mute:#8e9aa6;--arc:#5fb4ff;--arc2:#2a6fb8;--torch:#ff6a1a;--stop:#ff3b3b;--ok:#3ddc84;--warn:#ffc233}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:clip}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;min-height:44px;padding:0 14px;cursor:pointer;touch-action:manipulation}
+button:hover{border-color:#3a4652}
+button:active{transform:translateY(1px);background:#202730}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--arc);outline-offset:2px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.mono{font-family:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;font-variant-numeric:tabular-nums}
+header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px max(16px,2vw);background:#0e1115;border-bottom:1px solid var(--edge)}
+.brand{font-weight:700;font-size:17px;letter-spacing:-.01em;margin-right:auto;display:flex;align-items:center;gap:10px}
+.brand svg{flex:none}
+.state{font-weight:700;padding:6px 14px;border-radius:999px;background:#1d242b;border:1px solid var(--edge);white-space:nowrap}
+.state[data-s=Idle]{color:var(--ok);border-color:#1f5a3b}
+.state[data-s=Run],.state[data-s=Jog],.state[data-s=Home]{color:var(--arc);border-color:var(--arc2)}
+.state[data-s=Hold],.state[data-s=Door]{color:var(--warn);border-color:#6b5317}
+.state[data-s=Alarm],.state[data-s=Offline]{color:var(--stop);border-color:#6b1d1d}
+.link{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:13px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--stop)}
+.dot.on{background:var(--ok)}
+.dot.demo{background:var(--warn)}
+#stop{background:var(--stop);border-color:var(--stop);color:#fff;font-weight:800;min-width:96px}
+#stop:active{background:#c92424}
+main{display:grid;gap:12px;padding:12px max(16px,2vw) 24px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);max-width:1400px;margin:0 auto}
+.card{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px}
+.card h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--mute)}
+.bed{grid-row:span 2;display:flex;flex-direction:column}
+.fig{position:relative;flex:1;min-height:340px;border-radius:10px;overflow:hidden;background:#0a0c0f;border:1px solid #1c2229}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%}
+.bedfoot{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;color:var(--mute);font-size:13px}
+.bedfoot b{color:var(--ink);font-weight:600}
+.dro{display:grid;gap:8px}
+.axis{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--edge);border-radius:12px;padding:8px 10px}
+.axis .n{font-weight:800;font-size:20px;color:var(--arc)}
+.axis .w{font-size:clamp(26px,3.4vw,38px);line-height:1;text-align:right;white-space:nowrap}
+.axis .m{display:block;font-size:12px;color:var(--mute);text-align:right;margin-top:3px}
+.axis button{min-width:64px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.row>*{flex:1 1 auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-width:56px;flex:1 1 0}
+.chips button[aria-pressed=true]{background:var(--arc2);border-color:var(--arc);color:#fff}
+.lab{font-size:13px;color:var(--mute);margin:10px 0 6px}
+.jog{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:10px}
+.pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.pad button,.zcol button{min-height:58px;font-size:18px;font-weight:700}
+.pad .c{color:var(--mute);font-size:13px;font-weight:600}
+.zcol{display:grid;gap:6px;grid-template-rows:1fr 1fr 1fr}
+.zcol button{color:var(--arc);white-space:nowrap;padding:0 6px}
+.tabs{grid-column:1/-1}
+.tabbar{display:flex;gap:6px;border-bottom:1px solid var(--edge);margin:-4px -4px 12px;padding:0 4px 10px;overflow-x:auto}
+.tabbar button{flex:none;min-width:96px}
+.tabbar button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.pane[hidden]{display:none}
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px 6px;border-bottom:1px solid var(--edge);text-align:left;vertical-align:middle}
+th{font-size:13px;color:var(--mute);font-weight:600}
+td.num,th.num{text-align:right;white-space:nowrap}
+td.act{white-space:nowrap;text-align:right}
+td.act button{min-width:64px;margin-left:4px}
+.drop{border:1px dashed #3a4652;border-radius:12px;padding:14px;text-align:center;color:var(--mute);margin-top:12px}
+.drop.over{border-color:var(--arc);color:var(--ink)}
+.job{display:none;grid-column:1/-1;align-items:center;gap:12px;flex-wrap:wrap}
+.job.on{display:flex}
+.bar{flex:1 1 220px;height:12px;background:#0a0c0f;border-radius:99px;overflow:hidden;border:1px solid var(--edge)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--arc2),var(--arc))}
+.plasma{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.torch{background:#2a1508;border-color:#7a3410;color:#ffb48a;font-weight:800;min-height:64px;font-size:17px}
+.torch.firing{background:var(--torch);color:#1a0b02;box-shadow:0 0 28px #ff6a1a88}
+.leds{display:flex;flex-wrap:wrap;gap:8px}
+.led{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--edge);font-size:13px;white-space:nowrap}
+.led i{width:10px;height:10px;border-radius:50%;background:#39424b}
+.led.on i{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+label.f{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:10px;margin:6px 0;font-size:14px}
+input[type=number],input[type=text],select{background:#0d1014;border:1px solid var(--edge);border-radius:8px;min-height:40px;padding:0 10px;font-size:16px;width:100%}
+.switch{display:flex;align-items:center;gap:10px;font-size:14px;margin:4px 0 10px}
+.switch input{width:22px;height:22px;accent-color:var(--torch)}
+#log{height:260px;overflow:auto;background:#07090b;border:1px solid var(--edge);border-radius:10px;padding:10px;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+#log .tx{color:var(--arc)}
+#log .er{color:#ff7b7b}
+#log .ms{color:var(--mute)}
+.cmd{display:flex;gap:8px;margin-top:8px}
+.cmd input{flex:1}
+.note{font-size:13px;color:var(--mute)}
+.banner{display:none;background:#2b2108;border:1px solid #6b5317;color:#ffd77a;border-radius:10px;padding:8px 12px;font-size:13px;grid-column:1/-1}
+.banner.on{display:block}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1d242b;border:1px solid var(--edge);border-radius:10px;padding:10px 16px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:9}
+.toast.on{opacity:1}
+.toast.er{border-color:#6b1d1d;color:#ffb3b3}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--edge);border-radius:14px;max-width:420px}
+dialog::backdrop{background:#000a}
+@media(max-width:900px){main{grid-template-columns:minmax(0,1fr)}.bed{grid-row:auto;order:2}.side{order:1}.jogcard{order:3}.tabs{order:4}.job{order:0}.banner{order:-1}}
+@media(max-width:600px){.brand span{display:none}.fig{min-height:260px}.jog{grid-template-columns:minmax(0,1fr) 76px}td.act button{min-width:52px;padding:0 8px}.hide-s{display:none}}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="1" y="1" width="24" height="24" rx="6" fill="#13171c" stroke="#252d35"/><path d="M13 4v9" stroke="#5fb4ff" stroke-width="3" stroke-linecap="round"/><path d="M13 14l-3 8h6z" fill="#ff6a1a"/></svg>
+    <span>TheSpace PlasmaCNC</span>
+  </div>
+  <div class="link"><i class="dot" id="dot"></i><span id="linktxt">Connecting…</span></div>
+  <div class="state" id="state" data-s="Offline">Offline</div>
+  <button id="unlock" title="Clear alarm ($X)">Unlock</button>
+  <button id="reset" title="Soft reset (Ctrl-X)">Reset</button>
+  <button id="stop" title="Feed hold, then reset">STOP</button>
+</header>
+
+<main>
+  <div class="banner" id="banner">Demo mode: this page is not served by the controller, so a simulated machine is shown. Copy it to the board as index.html.gz to control the real machine.</div>
+
+  <section class="card job" id="job" aria-label="Running job">
+    <b id="jobname">—</b>
+    <div class="bar"><i id="jobbar"></i></div>
+    <span class="mono" id="jobpct">0%</span>
+    <span class="mono note" id="jobtime">0:00</span>
+    <button id="hold">Pause</button>
+    <button id="resume">Resume</button>
+    <button id="abort" style="color:#ffb3b3">Stop job</button>
+  </section>
+
+  <section class="card bed">
+    <h2>Cutting bed</h2>
+    <div class="fig"><canvas id="bedc"></canvas></div>
+    <div class="bedfoot">
+      <span>Feed <b class="mono" id="feed">0</b> mm/min</span>
+      <span>Torch <b id="torchst">off</b></span>
+      <span>Overrides <b class="mono" id="ovr">100 / 100</b></span>
+      <span>Frame <b class="mono" id="framet">none</b></span>
+      <button id="cleartrail" style="min-height:32px;margin-left:auto">Clear trail</button>
+    </div>
+  </section>
+
+  <section class="card side">
+    <h2>Position · work coordinates (machine below)</h2>
+    <div class="dro" id="dro"></div>
+    <div class="row" style="margin-top:8px">
+      <button id="zeroall">Zero all</button>
+      <button id="gozero">Go to X0 Y0</button>
+    </div>
+  </section>
+
+  <section class="card jogcard">
+    <h2>Jog</h2>
+    <div class="jog">
+      <div class="pad">
+        <button data-j="-1,1">↖</button><button data-j="0,1">Y+</button><button data-j="1,1">↗</button>
+        <button data-j="-1,0">X−</button><button class="c" id="jogstop" title="Cancel jog">Stop</button><button data-j="1,0">X+</button>
+        <button data-j="-1,-1">↙</button><button data-j="0,-1">Y−</button><button data-j="1,-1">↘</button>
+      </div>
+      <div class="zcol">
+        <button data-z="1">Z+</button>
+        <button data-z="0" class="c" id="zup10" title="Raise Z 10 mm">↑10</button>
+        <button data-z="-1">Z−</button>
+      </div>
+    </div>
+    <div class="lab">Step (mm)</div>
+    <div class="chips" id="steps"></div>
+    <div class="lab">Feed (mm/min)</div>
+    <div class="chips" id="feeds"></div>
+  </section>
+
+  <section class="card tabs">
+    <div class="tabbar" role="tablist">
+      <button role="tab" id="t-files" aria-selected="true">Files</button>
+      <button role="tab" id="t-plasma" aria-selected="false">Plasma</button>
+      <button role="tab" id="t-console" aria-selected="false">Console</button>
+      <button role="tab" id="t-setup" aria-selected="false">Setup</button>
+    </div>
+
+    <div class="pane" id="p-files">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <span class="note" id="sdinfo">SD card</span>
+        <button id="refresh" style="flex:0 0 auto">Refresh</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>File</th><th class="num hide-s">Size</th><th class="num"></th></tr></thead>
+        <tbody id="files"></tbody>
+      </table></div>
+      <label class="drop" id="drop">Drop G-code here or tap to upload to the SD card<input type="file" id="upfile" accept=".nc,.gcode,.gc,.ngc,.tap,.txt" hidden multiple></label>
+    </div>
+
+    <div class="pane" id="p-plasma" hidden>
+      <div class="plasma">
+        <div class="card" style="background:var(--panel2)">
+          <h2>Torch test</h2>
+          <label class="switch"><input type="checkbox" id="arm"> Arm torch (safety)</label>
+          <button class="torch" id="fire" disabled style="width:100%">Hold to fire</button>
+          <p class="note">Fires only while held, at most <span id="maxfire">2</span> s. Wear eye protection.</p>
+        </div>
+        <div class="card" style="background:var(--panel2)">
+          <h2>Initial height sensing</h2>
+          <button id="ihs" style="width:100%">Run IHS at current XY</button>
+          <p class="note">Probes down, sets Z0 on the plate, lifts to pierce height. Uses the values in Setup.</p>
+        </div>
+        <div class="card" style="background:var(--panel2)">
+          <h2>Inputs</h2>
+          <div class="leds" id="leds"></div>
+          <p class="note">Lit = active. P probe, X Y Z limits, D door.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="p-console" hidden>
+      <div id="log" class="mono" aria-live="polite"></div>
+      <form class="cmd" id="cmdf"><input type="text" id="cmd" placeholder="G-code or $ command" autocomplete="off" spellcheck="false"><button>Send</button></form>
+      <div class="chips" style="margin-top:8px">
+        <button data-c="$I">$I</button><button data-c="$$">$$</button><button data-c="$SS">Startup log</button><button data-c="$MKS/SDList">SD list</button><button data-c="$G">Modes</button>
+      </div>
+    </div>
+
+    <div class="pane" id="p-setup" hidden>
+      <div class="plasma">
+        <div>
+          <h2 style="font-size:13px;color:var(--mute);font-weight:600">IHS</h2>
+          <label class="f">Fast probe feed (mm/min)<input type="number" id="s-pf" step="10"></label>
+          <label class="f">Slow probe feed (mm/min)<input type="number" id="s-ps" step="10"></label>
+          <label class="f">Max probe travel (mm)<input type="number" id="s-pt" step="1"></label>
+          <label class="f">Floating head travel (mm)<input type="number" id="s-fh" step="0.1"></label>
+          <label class="f">Pierce height (mm)<input type="number" id="s-ph" step="0.1"></label>
+        </div>
+        <div>
+          <h2 style="font-size:13px;color:var(--mute);font-weight:600">Machine view</h2>
+          <label class="f">Bed size X (mm)<input type="number" id="s-bx" step="10"></label>
+          <label class="f">Bed size Y (mm)<input type="number" id="s-by" step="10"></label>
+          <label class="f">Torch test max (s)<input type="number" id="s-tf" step="0.5"></label>
+          <p class="note">Saved in this browser. The original FluidNC WebUI stays on the board as <a href="/webui3.html" style="color:var(--arc)">webui3.html</a> if you uploaded it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg"><p id="dlgtxt"></p><div class="row"><button id="dlgno">Cancel</button><button id="dlgyes" style="background:var(--arc2);border-color:var(--arc)">OK</button></div></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ERR = {1:'Expected command letter',2:'Bad number format',3:'Invalid $ statement',5:'Homing not enabled',8:'Not idle',9:'Locked by alarm - press Unlock',15:'Jog travel exceeded',20:'Unsupported G-code',22:'Feed rate not set',60:'SD card failed to mount',61:'SD card file open failed',120:'Another interface is busy'};
+const ALARM = {1:'Hard limit',2:'Soft limit',3:'Reset during motion',4:'Probe initial state',5:'Probe failed - no contact',6:'Homing reset',8:'Homing pull-off failed',9:'Homing switch not found',10:'Spindle / arc control'};
+
+// ---------- settings (per browser) ----------
+const DEF = {pf:800, ps:150, pt:60, fh:1.5, ph:3.8, bx:1000, by:1000, tf:2, step:10, feed:1000};
+let S = {...DEF};
+try { S = {...DEF, ...JSON.parse(localStorage.getItem('thespace-ui') || '{}')}; } catch (e) {}
+const save = () => { try { localStorage.setItem('thespace-ui', JSON.stringify(S)); } catch (e) {} };
+for (const k of ['pf','ps','pt','fh','ph','bx','by','tf']) {
+  const el = $('s-' + k); el.value = S[k];
+  el.addEventListener('change', () => { const v = parseFloat(el.value); if (!isNaN(v) && v > 0) { S[k] = v; save(); draw(); $('maxfire').textContent = S.tf; } else el.value = S[k]; });
+}
+$('maxfire').textContent = S.tf;
+
+// ---------- machine state ----------
+const M = {state:'Offline', mpos:[0,0,0], wco:[0,0,0], feed:0, ov:'100 / 100', pins:'', sd:null, frame:null, trail:[], jobStart:0};
+const wpos = () => M.mpos.map((v, i) => v - (M.wco[i] || 0));
+
+// ---------- UI: readouts ----------
+const AX = ['X','Y','Z'];
+$('dro').innerHTML = AX.map((a, i) => `<div class="axis"><span class="n">${a}</span><div><span class="w mono" id="w${i}">0.000</span><span class="m mono" id="m${i}">0.000</span></div><button data-zero="${a}">${a}0</button></div>`).join('');
+const STEPS = [0.1, 1, 10, 50, 100], FEEDS = [300, 1000, 3000, 6000];
+const chips = (el, list, key) => {
+  el.innerHTML = list.map(v => `<button aria-pressed="${v === S[key]}" data-v="${v}">${v}</button>`).join('');
+  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; S[key] = parseFloat(b.dataset.v); save(); chips(el, list, key); };
+};
+chips($('steps'), STEPS, 'step'); chips($('feeds'), FEEDS, 'feed');
+
+let toastT;
+const toast = (msg, bad) => { const t = $('toast'); t.textContent = msg; t.className = 'toast on' + (bad ? ' er' : ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', 3200); };
+const confirmBox = msg => new Promise(res => {
+  const d = $('dlg'); $('dlgtxt').textContent = msg;
+  $('dlgyes').onclick = () => { d.close(); res(true); }; $('dlgno').onclick = () => { d.close(); res(false); };
+  try { d.showModal(); } catch (e) { res(true); }
+});
+
+const logEl = $('log');
+const log = (txt, cls) => {
+  const line = document.createElement('div'); if (cls) line.className = cls; line.textContent = txt;
+  logEl.appendChild(line); while (logEl.childNodes.length > 400) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+function render() {
+  const w = wpos();
+  for (let i = 0; i < 3; i++) { $('w' + i).textContent = (w[i] || 0).toFixed(3); $('m' + i).textContent = 'M ' + (M.mpos[i] || 0).toFixed(3); }
+  const st = $('state'); st.textContent = M.state; st.dataset.s = M.state.split(':')[0];
+  $('feed').textContent = Math.round(M.feed); $('ovr').textContent = M.ov;
+  $('torchst').textContent = M.torch ? 'ON' : 'off'; $('torchst').style.color = M.torch ? 'var(--torch)' : '';
+  $('framet').textContent = M.frame ? `${M.frame[0]},${M.frame[1]} → ${M.frame[2]},${M.frame[3]}` : 'none';
+  const job = $('job');
+  if (M.sd) {
+    job.classList.add('on'); $('jobname').textContent = M.sd.file; $('jobbar').style.width = M.sd.pct + '%'; $('jobpct').textContent = M.sd.pct.toFixed(1) + '%';
+    const s = Math.floor((Date.now() - M.jobStart) / 1000); $('jobtime').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  } else job.classList.remove('on');
+  $('leds').innerHTML = [['P','Probe'],['X','X limit'],['Y','Y limit'],['Z','Z limit'],['D','Door']].map(([k, n]) => `<span class="led ${M.pins.includes(k) ? 'on' : ''}"><i></i>${n}</span>`).join('');
+  draw();
+}
+
+// ---------- bed view ----------
+const cv = $('bedc');
+function draw() {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  if (!r.width) return;
+  cv.width = r.width * dpr; cv.height = r.height * dpr;
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = r.width, H = r.height, pad = 30;
+  const sc = Math.min((W - pad * 2) / S.bx, (H - pad * 2) / S.by);
+  const ox = (W - S.bx * sc) / 2, oy = (H + S.by * sc) / 2;
+  const X = x => ox + x * sc, Y = y => oy - y * sc;
+  g.clearRect(0, 0, W, H);
+  // plate
+  const grad = g.createLinearGradient(0, Y(S.by), 0, Y(0));
+  grad.addColorStop(0, '#1a2027'); grad.addColorStop(1, '#12161b');
+  g.fillStyle = grad; g.fillRect(X(0), Y(S.by), S.bx * sc, S.by * sc);
+  g.strokeStyle = '#232b33'; g.lineWidth = 1;
+  const stepG = S.bx > 600 ? 100 : 50;
+  g.beginPath();
+  for (let x = stepG; x < S.bx; x += stepG) { g.moveTo(X(x) + .5, Y(0)); g.lineTo(X(x) + .5, Y(S.by)); }
+  for (let y = stepG; y < S.by; y += stepG) { g.moveTo(X(0), Y(y) + .5); g.lineTo(X(S.bx), Y(y) + .5); }
+  g.stroke();
+  g.strokeStyle = '#3a4652'; g.strokeRect(X(0) + .5, Y(S.by) + .5, S.bx * sc, S.by * sc);
+  g.fillStyle = '#8e9aa6'; g.font = '12px system-ui'; g.textBaseline = 'top';
+  g.fillText('0', X(0) - 4, Y(0) + 6); g.fillText(S.bx + ' mm', X(S.bx) - 48, Y(0) + 6);
+  // frame
+  if (M.frame) {
+    const [x0, y0, x1, y1] = M.frame.map(Number), w0 = M.wco;
+    g.setLineDash([6, 5]); g.strokeStyle = '#ffc233'; g.lineWidth = 1.5;
+    g.strokeRect(X(x0 + w0[0]), Y(y1 + w0[1]), (x1 - x0) * sc, (y1 - y0) * sc); g.setLineDash([]);
+  }
+  // trail
+  if (M.trail.length > 1) {
+    g.lineWidth = 2; g.lineJoin = 'round';
+    for (let i = 1; i < M.trail.length; i++) {
+      const a = M.trail[i - 1], b = M.trail[i];
+      g.strokeStyle = b[2] ? '#ff6a1a' : '#2a6fb8'; g.beginPath(); g.moveTo(X(a[0]), Y(a[1])); g.lineTo(X(b[0]), Y(b[1])); g.stroke();
+    }
+  }
+  // work origin
+  const wx = X(M.wco[0]), wy = Y(M.wco[1]);
+  g.strokeStyle = '#3ddc84'; g.lineWidth = 2; g.beginPath(); g.moveTo(wx, wy); g.lineTo(wx + 18, wy); g.moveTo(wx, wy); g.lineTo(wx, wy - 18); g.stroke();
+  g.fillStyle = '#3ddc84'; g.fillText('W0', wx + 4, wy + 4);
+  // torch
+  const tx = X(M.mpos[0]), ty = Y(M.mpos[1]);
+  g.strokeStyle = M.torch ? '#ff6a1a' : '#5fb4ff'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(tx, Y(0)); g.lineTo(tx, Y(S.by)); g.moveTo(X(0), ty); g.lineTo(X(S.bx), ty); g.globalAlpha = .35; g.stroke(); g.globalAlpha = 1;
+  if (M.torch) { const gl = g.createRadialGradient(tx, ty, 0, tx, ty, 26); gl.addColorStop(0, '#ffd2b0'); gl.addColorStop(.3, '#ff6a1acc'); gl.addColorStop(1, '#ff6a1a00'); g.fillStyle = gl; g.beginPath(); g.arc(tx, ty, 26, 0, 7); g.fill(); }
+  g.lineWidth = 2; g.strokeStyle = M.torch ? '#ff6a1a' : '#5fb4ff'; g.beginPath(); g.arc(tx, ty, 9, 0, 7); g.stroke();
+  g.fillStyle = M.torch ? '#ff6a1a' : '#5fb4ff'; g.beginPath(); g.arc(tx, ty, 3, 0, 7); g.fill();
+}
+const bedRO = new ResizeObserver(draw); bedRO.observe(cv);
+
+// ---------- protocol parsing ----------
+let lastPushed = 0;
+function onStatus(line) {
+  const body = line.slice(1, -1).split('|');
+  M.state = body[0];
+  let gotW = null, accS = false;
+  for (const f of body.slice(1)) {
+    const [k, v = ''] = f.split(/:(.*)/s);
+    const nums = () => v.split(',').map(Number);
+    if (k === 'MPos') M.mpos = nums();
+    else if (k === 'WPos') gotW = nums();
+    else if (k === 'WCO') M.wco = nums();
+    else if (k === 'FS' || k === 'F') M.feed = nums()[0];
+    else if (k === 'Ov') { const o = nums(); M.ov = o[0] + ' / ' + o[2]; }
+    else if (k === 'SD') { const c = v.indexOf(','); M.sd = {pct: parseFloat(v), file: v.slice(c + 1).replace(/^.*\//, '')}; }
+    else if (k === 'A') accS = /[SC]/.test(v);
+  }
+  M.torch = accS || !!fireT;
+  M.pins = (body.find(f => f.startsWith('Pn:')) || '').slice(3);
+  if (!body.some(f => f.startsWith('SD:'))) M.sd = null;
+  if (gotW && !body.some(f => f.startsWith('MPos'))) M.mpos = gotW.map((v, i) => v + (M.wco[i] || 0));
+  const last = M.trail[M.trail.length - 1], p = [M.mpos[0], M.mpos[1], M.torch ? 1 : 0];
+  if (!last || Math.hypot(p[0] - last[0], p[1] - last[1]) > 0.3) { M.trail.push(p); if (M.trail.length > 3000) M.trail.shift(); }
+  render();
+}
+function onLine(line) {
+  line = line.trim(); if (!line) return;
+  if (line[0] === '<' && line.endsWith('>')) return onStatus(line);
+  if (line === 'ok') return;
+  if (line.startsWith('error')) { const n = parseInt(line.replace(/\D+/g, '')); const t = 'Error ' + n + (ERR[n] ? ': ' + ERR[n] : ''); log(t, 'er'); toast(t, true); return; }
+  if (line.startsWith('ALARM')) { const n = parseInt(line.split(':')[1]); const t = 'Alarm ' + n + (ALARM[n] ? ': ' + ALARM[n] : ''); log(t, 'er'); toast(t, true); return; }
+  const b = line.match(/^Bounds:\((-?[\d.]+),(-?[\d.]+)\), \((-?[\d.]+),(-?[\d.]+)\)/);
+  if (b) { M.frame = b.slice(1, 5); render(); }
+  if (line.startsWith('[FILE')) return;
+  log(line, line.startsWith('[MSG') ? 'ms' : '');
+}
+
+// ---------- transport: real controller (WebSocket + HTTP) or demo ----------
+let ws = null, demo = null, buf = '', fireT = null;
+const send = (cmd, quiet) => {
+  if (!quiet) log('> ' + cmd, 'tx');
+  if (demo) return demo.cmd(cmd);
+  if (ws && ws.readyState === 1) ws.send(cmd + '\n'); else toast('Not connected', true);
+};
+const rt = ch => { if (demo) return demo.rt(ch); if (ws && ws.readyState === 1) ws.send(ch); };
+function setLink(mode) {
+  $('dot').className = 'dot' + (mode === 'on' ? ' on' : mode === 'demo' ? ' demo' : '');
+  $('linktxt').textContent = mode === 'on' ? location.host : mode === 'demo' ? 'Demo' : 'Disconnected';
+}
+function connect() {
+  if (!/^https?:$/.test(location.protocol) || /claude|anthropic|usercontent/.test(location.hostname)) return startDemo();
+  try { ws = new WebSocket('ws://' + location.host + '/'); } catch (e) { return startDemo(); }
+  ws.binaryType = 'arraybuffer';
+  const failT = setTimeout(() => { if (ws.readyState !== 1) { ws.close(); startDemo(); } }, 3500);
+  ws.onopen = () => { clearTimeout(failT); setLink('on'); loadFiles(); };
+  ws.onmessage = e => {
+    if (typeof e.data === 'string') return; // currentID / PING
+    buf += new TextDecoder().decode(e.data);
+    let i; while ((i = buf.indexOf('\n')) >= 0) { onLine(buf.slice(0, i)); buf = buf.slice(i + 1); }
+  };
+  ws.onclose = () => { if (demo) return; setLink('off'); M.state = 'Offline'; render(); setTimeout(connect, 2000); };
+}
+setInterval(() => { if (demo || (ws && ws.readyState === 1)) rt('?'); }, 250);
+
+async function loadFiles() {
+  let data;
+  if (demo) data = demo.files();
+  else {
+    try { data = await (await fetch('/upload?path=/')).json(); } catch (e) { $('sdinfo').textContent = 'SD card not readable'; return; }
+  }
+  const files = (data.files || []).filter(f => f.size !== '-1' && f.size !== -1 && !String(f.name).startsWith('.'));
+  $('sdinfo').textContent = data.status && data.status !== 'Ok' ? data.status : `SD card · ${data.used || '?'} used of ${data.total || '?'}`;
+  $('files').innerHTML = files.length ? files.map(f => `<tr><td>${esc(f.name)}</td><td class="num mono hide-s">${esc(f.size)}</td><td class="act"><button data-f="frame" data-n="${esc(f.name)}">Frame</button><button data-f="run" data-n="${esc(f.name)}" style="color:var(--ok)">Run</button><button data-f="del" data-n="${esc(f.name)}" title="Delete">✕</button></td></tr>`).join('')
+    : '<tr><td colspan="3" class="note">No files on the SD card yet.</td></tr>';
+}
+$('refresh').onclick = loadFiles;
+$('files').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return; const n = b.dataset.n;
+  if (b.dataset.f === 'frame') { send('$MKS/Frame=/' + n); toast('Framing ' + n + ' - torch stays off'); }
+  if (b.dataset.f === 'run' && await confirmBox(`Start ${n}? Make sure the plate and torch are ready.`)) { M.trail = []; M.jobStart = Date.now(); send('$SD/Run=/' + n); }
+  if (b.dataset.f === 'del' && await confirmBox(`Delete ${n} from the SD card?`)) {
+    if (demo) demo.del(n); else await fetch('/upload?path=/&action=delete&filename=' + encodeURIComponent(n));
+    loadFiles();
+  }
+};
+async function upload(list) {
+  for (const f of list) {
+    if (demo) { demo.add(f.name, f.size); continue; }
+    const fd = new FormData(); fd.append('path', '/'); fd.append('/' + f.name + 'S', f.size); fd.append('myfile[]', f, '/' + f.name);
+    toast('Uploading ' + f.name + '…');
+    try { const r = await fetch('/upload', {method: 'POST', body: fd}); if (!r.ok) throw 0; toast(f.name + ' uploaded'); } catch (e) { toast('Upload failed: ' + f.name, true); }
+  }
+  loadFiles();
+}
+const drop = $('drop');
+$('upfile').onchange = e => upload([...e.target.files]);
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); upload([...e.dataTransfer.files]); };
+
+// ---------- controls ----------
+document.querySelector('.pad').onclick = e => {
+  const b = e.target.closest('button[data-j]'); if (!b) return;
+  const [dx, dy] = b.dataset.j.split(',').map(Number), s = S.step;
+  send(`$J=G91 ${dx ? 'X' + (dx * s) : ''}${dx && dy ? ' ' : ''}${dy ? 'Y' + (dy * s) : ''} F${S.feed}`);
+};
+document.querySelector('.zcol').onclick = e => {
+  const b = e.target.closest('button[data-z]'); if (!b) return;
+  const d = +b.dataset.z; const s = d ? d * Math.min(S.step, 10) : 10;
+  send(`$J=G91 Z${s} F${Math.min(S.feed, 1000)}`);
+};
+$('jogstop').onclick = () => rt('\x85');
+$('dro').onclick = e => { const b = e.target.closest('button[data-zero]'); if (b) send(`G10 L20 P0 ${b.dataset.zero}0`); };
+$('zeroall').onclick = () => send('G10 L20 P0 X0 Y0 Z0');
+$('gozero').onclick = () => send('G90 G0 X0 Y0');
+$('unlock').onclick = () => send('$X');
+$('reset').onclick = () => { rt('\x18'); M.torch = false; log('> [reset]', 'tx'); };
+$('stop').onclick = () => { rt('!'); setTimeout(() => rt('\x18'), 150); M.torch = false; log('> [STOP: feed hold + reset]', 'er'); toast('Stopped', true); };
+$('hold').onclick = () => rt('!');
+$('resume').onclick = () => rt('~');
+$('abort').onclick = async () => { if (await confirmBox('Stop the running job?')) { rt('!'); setTimeout(() => rt('\x18'), 150); } };
+$('cleartrail').onclick = () => { M.trail = []; M.frame = null; render(); };
+
+// torch test: hold to fire, auto-off
+$('arm').onchange = e => { $('fire').disabled = !e.target.checked; };
+const fireOn = e => { e.preventDefault(); if ($('fire').disabled || fireT) return; M.torch = true; $('fire').classList.add('firing'); send('M3 S1'); fireT = setTimeout(fireOff, S.tf * 1000); render(); };
+const fireOff = () => { if (!fireT) return; clearTimeout(fireT); fireT = null; M.torch = false; $('fire').classList.remove('firing'); send('M5'); $('arm').checked = false; $('fire').disabled = true; render(); };
+$('fire').addEventListener('pointerdown', fireOn);
+for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) $('fire').addEventListener(ev, fireOff);
+
+$('ihs').onclick = async () => {
+  if (!await confirmBox(`Run IHS? Z probes down up to ${S.pt} mm until the sensor triggers.`)) return;
+  for (const l of [`G38.2 Z-${S.pt} F${S.pf}`, 'G91 G0 Z2', 'G90', `G38.2 Z-5 F${S.ps}`, `G92 Z-${S.fh}`, `G0 Z${S.ph}`]) send(l);
+};
+
+// console
+const hist = []; let hi = 0;
+$('cmdf').onsubmit = e => { e.preventDefault(); const v = $('cmd').value.trim(); if (!v) return; hist.push(v); hi = hist.length; send(v); $('cmd').value = ''; };
+$('cmd').onkeydown = e => { if (e.key === 'ArrowUp' && hi > 0) { $('cmd').value = hist[--hi]; e.preventDefault(); } if (e.key === 'ArrowDown' && hi < hist.length) { $('cmd').value = hist[++hi] || ''; e.preventDefault(); } };
+document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => send(b.dataset.c));
+
+// tabs
+const tabs = ['files', 'plasma', 'console', 'setup'];
+tabs.forEach(t => $('t-' + t).onclick = () => tabs.forEach(u => { $('t-' + u).setAttribute('aria-selected', u === t); $('p-' + u).hidden = u !== t; }));
+
+// keyboard jog (arrows, PgUp/PgDn) when not typing
+document.addEventListener('keydown', e => {
+  if (/input|textarea|select/i.test(document.activeElement.tagName)) return;
+  const k = {ArrowLeft: '-1,0', ArrowRight: '1,0', ArrowUp: '0,1', ArrowDown: '0,-1'}[e.key];
+  if (k) { e.preventDefault(); document.querySelector(`[data-j="${k}"]`).click(); }
+  if (e.key === 'PageUp') document.querySelector('[data-z="1"]').click();
+  if (e.key === 'PageDown') document.querySelector('[data-z="-1"]').click();
+  if (e.key === 'Escape') $('stop').click();
+});
+
+// ---------- demo machine ----------
+function startDemo() {
+  if (demo) return;
+  $('banner').classList.add('on'); setLink('demo');
+  let pos = [120, 80, 0], wco = [100, 50, 0], state = 'Idle', queue = [], job = null, torch = false;
+  let files = [{name: 'flange_200.nc', size: 18432}, {name: 'bracket_x4.nc', size: 9216}, {name: 'test.nc', size: 338}];
+  const path = () => { const p = [[10, 10, 0], [10, 10, 1]]; for (const [x, y] of [[90, 10], [90, 60], [10, 60], [10, 10]]) p.push([x, y, 1]); p.push([10, 10, 0], [50, 35, 0]); for (let a = 0; a <= 360; a += 10) p.push([50 + 12 * Math.cos(a * Math.PI / 180), 35 + 12 * Math.sin(a * Math.PI / 180), 1]); p.push([0, 0, 0]); return p; };
+  const move = (to, f) => queue.push({to, f});
+  const report = () => {
+    const sd = job ? `|SD:${(job.i / job.p.length * 100).toFixed(2)},/sd/${job.name}` : '';
+    onLine(`<${state}|MPos:${pos.map(v => v.toFixed(3)).join(',')}|FS:${state === 'Idle' ? 0 : 1000},0|WCO:${wco.join(',')}${torch ? '|A:S' : ''}${sd}>`);
+  };
+  setInterval(() => {
+    if (state === 'Hold') return;
+    if (!queue.length && job) {
+      if (job.i < job.p.length) { const [x, y, t] = job.p[job.i++]; torch = !!t; M.torch = torch; move([x + wco[0], y + wco[1], pos[2]], 2000); }
+      else { job = null; torch = false; M.torch = false; onLine('[MSG:INFO: Program End]'); }
+    }
+    if (queue.length) {
+      state = job ? 'Run' : state === 'Run' ? 'Run' : 'Jog';
+      const q = queue[0], d = q.to.map((v, i) => v - pos[i]), len = Math.hypot(...d), stepL = q.f / 60 * 0.05;
+      if (len <= stepL) { pos = q.to.slice(); queue.shift(); } else pos = pos.map((v, i) => v + d[i] / len * stepL);
+    } else if (state !== 'Alarm') state = 'Idle';
+  }, 50);
+  demo = {
+    rt(ch) { if (ch === '!') state = 'Hold'; if (ch === '~') state = job ? 'Run' : 'Idle'; if (ch === '\x18' || ch === '\x85') { queue = []; job = null; torch = false; M.torch = false; state = 'Idle'; } if (ch === '?') report(); },
+    cmd(c) {
+      const u = c.toUpperCase().replace(/\s+/g, ' ');
+      const num = (l, s) => { const m = s.match(new RegExp(l + '(-?[\\d.]+)')); return m ? parseFloat(m[1]) : null; };
+      if (u.startsWith('$J=G91')) { const t = pos.slice(); ['X','Y','Z'].forEach((a, i) => { const v = num(a, u); if (v !== null) t[i] += v; }); move(t, num('F', u) || 1000); }
+      else if (u.startsWith('G10 L20 P0')) ['X','Y','Z'].forEach((a, i) => { if (num(a, u) !== null) wco[i] = pos[i]; });
+      else if (u.startsWith('G90 G0')) move([wco[0], wco[1], pos[2]], 6000);
+      else if (u.startsWith('$MKS/FRAME')) { onLine('Bounds:(10.00,10.00), (90.00,60.00)'); for (const [x, y] of [[10, 10], [10, 60], [90, 60], [90, 10], [10, 10]]) move([x + wco[0], y + wco[1], pos[2]], 3000); }
+      else if (u.startsWith('$SD/RUN')) job = {name: c.split('/').pop(), p: path(), i: 0};
+      else if (u.startsWith('$I')) ['[VER:4.x FluidNC demo:]', '[MSG:Machine: Plasma CNC (demo)]'].forEach(onLine);
+      else if (u.startsWith('G38.2')) { move([pos[0], pos[1], pos[2] - 4], 600); }
+      else if (u === '$X') state = 'Idle';
+      onLine('ok');
+    },
+    files: () => ({files, used: '27.6 KB', total: '14.83 GB', status: 'Ok'}),
+    del: n => { files = files.filter(f => f.name !== n); },
+    add: (n, s) => { files = files.filter(f => f.name !== n).concat({name: n, size: s}); toast(n + ' added (demo)'); },
+  };
+  // open mid-use: the last cut of flange_200.nc and its frame are on the bed
+  M.frame = ['10.00', '10.00', '90.00', '60.00'];
+  M.trail = path().map(([x, y, t]) => [x + wco[0], y + wco[1], t]);
+  log('Demo machine started. Commands are simulated.', 'ms');
+  loadFiles();
+}
+
+render();
+connect();
+}
+</script>
+</body>
+</html>
