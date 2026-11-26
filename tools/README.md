@@ -59,3 +59,8 @@ Saves `$I`, `$$`, `$S` and `$CMD` output of the controller to a text file:
 ```bash
 python tools/grbl_dump_settings.py COM7 settings_mks.txt
 ```
+
+## test_gcode/test.nc
+
+Small safe test job for the pendant (no M3, no Z): 50 x 30 mm rectangle + R10 circle,
+frame bounds X10 Y10 - X60 Y40. Copy it to the SD card root.
