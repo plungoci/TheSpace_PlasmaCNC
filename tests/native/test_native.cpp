@@ -147,7 +147,58 @@ static void test_bounds_ignored_lines() {
     CHECK(!empty.valid);
 }
 
+// Lines captured from the real pendant at power-up (2026-11-26)
+static void test_boot_banner() {
+    const char* banner[] = { "/**************************************************/",
+                             "         Board Support from Makerbase",
+                             "/*-Board Name:ESP32_DW_MINI",
+                             "/*-Machine Axis Num:4",
+                             "/*-FW Version:YD_V2.0.0_20240223" };
+    PendantFilterOptions opt;
+    for (auto l : banner) {
+        CHECK(is_pendant_boot_banner(l));
+        CHECK(filter_pendant_line(l, opt).action == PendantAction::Swallow);
+    }
+    // real pendant commands must pass
+    CHECK(filter_pendant_line("$I", opt).action == PendantAction::Pass);
+    CHECK(filter_pendant_line("$J=G91Y5F1000", opt).action == PendantAction::Pass);
+    CHECK(filter_pendant_line("$J=G91X5F1000", opt).action == PendantAction::Pass);
+    CHECK(!is_pendant_boot_banner("G0 X0 Y0"));
+    CHECK(!is_pendant_boot_banner("$H"));
+}
+
+static void test_status_augmenter() {
+    StatusAugmenter a;
+
+    // FluidNC first report: MPos + WCO -> WPos added right after MPos
+    std::string r = a.augment("<Idle|MPos:10.000,20.000,5.000|FS:0,0|WCO:1.000,2.000,0.500>");
+    CHECK(r == "<Idle|MPos:10.000,20.000,5.000|WPos:9.000,18.000,4.500|FS:0,0|WCO:1.000,2.000,0.500>");
+
+    // Later report without WCO uses the remembered offset
+    r = a.augment("<Jog|MPos:11.000,20.000,5.000|FS:1000,0>");
+    CHECK(r == "<Jog|MPos:11.000,20.000,5.000|WPos:10.000,18.000,4.500|FS:1000,0>");
+
+    // WPos-only report -> MPos inserted before it
+    r = a.augment("<Idle|WPos:10.000,18.000,4.500|FS:0,0>");
+    CHECK(r == "<Idle|MPos:11.000,20.000,5.000|WPos:10.000,18.000,4.500|FS:0,0>");
+
+    // MKS-style report with both: unchanged
+    std::string mks = "<Idle|MPos:0.000,5.000,0.000|WPos:0.000,5.000,0.000|FS:0,0>";
+    CHECK(a.augment(mks) == mks);
+
+    // Not a status line: unchanged
+    CHECK(a.augment("ok") == "ok");
+    CHECK(a.augment("[MSG:INFO: hello]") == "[MSG:INFO: hello]");
+
+    // No WCO known yet -> offset 0
+    StatusAugmenter fresh;
+    r = fresh.augment("<Idle|MPos:1.000,2.000,3.000|FS:0,0>");
+    CHECK(r == "<Idle|MPos:1.000,2.000,3.000|WPos:1.000,2.000,3.000|FS:0,0>");
+}
+
 int main() {
+    test_boot_banner();
+    test_status_augmenter();
     test_spindle_detection();
     test_filter();
     test_bounds_lines();

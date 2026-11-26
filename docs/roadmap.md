@@ -16,7 +16,9 @@
 - [x] On-board X/Y TMC2209 are UART-controlled on V2.2: `$X/Current/Run` / `$Y/Current/Run` 0.25 -> 0.8 A made the motors clearly quieter (2026-11-26). Stock default 0.25 A is too low.
 - [x] Pendant connects on stock MKS firmware after `$47=1` + power cycle (link icon shown) - 2026-11-25
 - [x] Pendant baud = 115200 (`$46=1`, MKS manual)
-- [ ] Sniff pendant <-> board UART on stock firmware (startup handshake, [ESP220] ok timing)
+- [x] Sniff pendant <-> board UART on stock firmware - boot banner, `$I`, `?` polling, jog, MPos+WPos status (docs/captures)
+- [x] `mks_pendant`: drop the pendant's boot banner, send MPos+WPos in every status report
+- [ ] Capture SD list / frame / run on stock firmware ([ESP220] ok timing)
 - [x] Full flash backup of the original MKS firmware - board V2.2 and pendant (`backups/2026-11-25_stock_mks`)
 - [ ] Test Z driver (TMC2209 in J25, SW1: 1 ON, 2 ON, 3 OFF = 16 microsteps) on the original firmware - needs `$45=2` (XYZ mode)
 - [ ] Flash FluidNC v4 (S3), load config, verify motion, limits, probe, SD card

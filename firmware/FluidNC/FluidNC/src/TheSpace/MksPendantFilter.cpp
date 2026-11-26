@@ -4,6 +4,8 @@
 #include "MksPendantFilter.h"
 
 #include <cctype>
+#include <cstdio>
+#include <cstdlib>
 
 namespace TheSpace {
 
@@ -47,6 +49,97 @@ namespace TheSpace {
             return u.size() == 3 || !isdigit(static_cast<unsigned char>(u[3]));
         }
     }  // namespace
+
+    bool is_pendant_boot_banner(const std::string& raw) {
+        const std::string line = trim(raw);
+        return starts_with(line, "/*") || starts_with(line, "Board Support from Makerbase");
+    }
+
+    namespace {
+        std::vector<double> parse_values(const std::string& csv) {
+            std::vector<double> v;
+            const char*         p = csv.c_str();
+            while (*p) {
+                char*  end = nullptr;
+                double d   = strtod(p, &end);
+                if (end == p) {
+                    break;
+                }
+                v.push_back(d);
+                p = end;
+                if (*p == ',') {
+                    ++p;
+                } else {
+                    break;
+                }
+            }
+            return v;
+        }
+
+        std::string format_values(const std::vector<double>& v) {
+            std::string out;
+            char        buf[32];
+            for (size_t i = 0; i < v.size(); ++i) {
+                snprintf(buf, sizeof(buf), "%s%.3f", i ? "," : "", v[i]);
+                out += buf;
+            }
+            return out;
+        }
+    }  // namespace
+
+    std::string StatusAugmenter::augment(const std::string& line) {
+        if (line.size() < 3 || line.front() != '<' || line.back() != '>') {
+            return line;
+        }
+        // split "<State|A:..|B:..>" into fields
+        std::vector<std::string> fields;
+        std::string              body = line.substr(1, line.size() - 2);
+        size_t                   start = 0;
+        while (true) {
+            size_t bar = body.find('|', start);
+            fields.push_back(body.substr(start, bar == std::string::npos ? std::string::npos : bar - start));
+            if (bar == std::string::npos) {
+                break;
+            }
+            start = bar + 1;
+        }
+
+        int mpos = -1, wpos = -1;
+        for (size_t i = 0; i < fields.size(); ++i) {
+            if (starts_with(fields[i], "MPos:")) {
+                mpos = static_cast<int>(i);
+            } else if (starts_with(fields[i], "WPos:")) {
+                wpos = static_cast<int>(i);
+            } else if (starts_with(fields[i], "WCO:")) {
+                _wco = parse_values(fields[i].substr(4));
+            }
+        }
+        if ((mpos < 0) == (wpos < 0)) {
+            return line;  // both present (or neither): nothing to add
+        }
+
+        const bool          have_m = mpos >= 0;
+        std::vector<double> pos    = parse_values(fields[have_m ? mpos : wpos].substr(5));
+        std::vector<double> other(pos.size());
+        for (size_t i = 0; i < pos.size(); ++i) {
+            double off = i < _wco.size() ? _wco[i] : 0.0;
+            other[i]   = have_m ? pos[i] - off : pos[i] + off;
+        }
+        if (have_m) {
+            fields.insert(fields.begin() + mpos + 1, "WPos:" + format_values(other));
+        } else {
+            fields.insert(fields.begin() + wpos, "MPos:" + format_values(other));
+        }
+
+        std::string out = "<";
+        for (size_t i = 0; i < fields.size(); ++i) {
+            if (i) {
+                out += '|';
+            }
+            out += fields[i];
+        }
+        return out + ">";
+    }
 
     bool line_turns_spindle_on(const std::string& line) {
         const std::string u = upper(line);
@@ -101,6 +194,11 @@ namespace TheSpace {
     PendantResult filter_pendant_line(const std::string& raw, const PendantFilterOptions& opt) {
         const std::string line = trim(raw);
         const std::string u    = upper(line);
+
+        // The pendant prints its own debug banner on the link when it powers up
+        if (is_pendant_boot_banner(line)) {
+            return { PendantAction::Swallow, "", "pendant boot banner" };
+        }
 
         // MKS SD file list -> same listing in the MKS format
         if (u == "[ESP210]") {

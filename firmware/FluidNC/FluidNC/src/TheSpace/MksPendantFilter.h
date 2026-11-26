@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace TheSpace {
 
@@ -35,6 +36,23 @@ namespace TheSpace {
 
     // Translate one complete line received from the pendant.
     PendantResult filter_pendant_line(const std::string& line, const PendantFilterOptions& opt);
+
+    // True for the debug banner the pendant prints on the link at power-up
+    // ("/****...", "Board Support from Makerbase", "/*-Board Name:..."). MKS answers
+    // each of those lines with error:1/2; we drop them instead.
+    bool is_pendant_boot_banner(const std::string& line);
+
+    // The MKS firmware reports BOTH MPos and WPos in every status report, and the
+    // pendant shows both ("Working" and "Machine"). FluidNC reports one of them plus
+    // WCO now and then. This adds the missing one, computed from the last WCO seen.
+    class StatusAugmenter {
+    public:
+        // Returns the (possibly) augmented status line. Non-status lines are returned unchanged.
+        std::string augment(const std::string& line);
+
+    private:
+        std::vector<double> _wco;  // last known work coordinate offset (empty = assume 0)
+    };
 
     // True if the line is G-code containing M3 or M4 (spindle / torch on).
     // M30, M300 etc. are not matched. Comments are ignored.

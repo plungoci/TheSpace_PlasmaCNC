@@ -39,8 +39,13 @@ namespace TheSpace {
         bool lineComplete(char* line, char c) override;
         void handle() override;
 
+        // Status reports to the pendant get both MPos and WPos (MKS format)
+        using Channel::sendLine;
+        void sendLine(MsgLevel level, const std::string* line) override;
+
     private:
         const PendantFilterOptions& _opts;
+        StatusAugmenter             _status;
         bool                        _job_was_active = false;
     };
 

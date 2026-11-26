@@ -10,6 +10,40 @@ Source: strings extracted from the pendant firmware
 and from the MKS controller firmware (Grbl_ESP32 based).
 Baud rate: **115200** (MKS setting `$46=1`, the default; `$46=2` = 250000).
 
+## Real capture on stock MKS firmware (2026-11-26)
+
+Captured on the J12 header of a V2.2 board (pin 3 = board TX, pin 4 = pendant TX) with a
+Nano used as USB-UART (ATmega held in reset), 115200 baud, `tools/serial_listen.py`.
+Raw logs: [`captures/2026-11-26_board_to_pendant.txt`](captures/2026-11-26_board_to_pendant.txt),
+[`captures/2026-11-26_pendant_to_board.txt`](captures/2026-11-26_pendant_to_board.txt).
+Pin 3 / pin 4 assignment of V2.1 confirmed on V2.2.
+
+Sequence:
+
+1. Board boots and prints `Grbl 1.1h ['$' for help]`, then `[MSG:...]` WiFi lines.
+2. Pendant boots and prints **its own debug banner on the link** (`/*****`,
+   `Board Support from Makerbase`, `/*-Board Name:ESP32_DW_MINI`, ..., `/*-FW Version:YD_V2.0.0_20240223`).
+   The board answers each line with `error:1` / `error:2`; the pendant ignores that.
+3. Pendant sends `?` and `$I` three times. The board answers `$I` with
+   `[V4.00(8M.H35.20240226)]`, `[VER:1.1h.2024022601:]`, `[OPT:VPH,63,256]`,
+   `[MSG:Using machine:MKS DLC32]`, `ok`, `[MSG:Mode=AP:...]`, `ok`.
+4. Pendant polls `?` (followed by a newline - every report is followed by `ok`) every
+   0.5 s while active, every 1 s when idle.
+5. Status reports from MKS always contain **both** `MPos` and `WPos`, e.g.
+   `<Idle|MPos:0.000,5.000,0.000|WPos:0.000,5.000,0.000|FS:0,0>`, plus `WCO` / `Ov` now and then.
+6. Each jog button press sends one line, no spaces: `$J=G91Y5F1000`, `$J=G91X5F1000`
+   (5 mm step, F1000), answered with `ok`.
+
+### FluidNC differences and how the module handles them
+
+| Item | MKS | FluidNC | Handling |
+|---|---|---|---|
+| Startup banner | `Grbl 1.1h ['$' for help]` | `Grbl 4.x [FluidNC v4.x ...]` | test on hardware; MKS-style banner on the pendant channel if needed |
+| Pendant boot banner lines | answered with `error:1/2` | would also error | **dropped** by `mks_pendant` |
+| `$I` | `[VER:1.1h.2024022601:]` ... `MKS DLC32` | `[VER:4.x FluidNC ...]`, `[OPT:PHS]` | test on hardware; rewrite if the pendant rejects it |
+| Status | MPos **and** WPos | MPos (or WPos) + WCO sometimes | **missing one added** from the last WCO (`StatusAugmenter`) |
+| `?` + newline, jog, `ok` | | same | no change needed |
+
 ## Commands sent by the pendant
 
 | Function | Command | FluidNC status |
@@ -83,7 +117,11 @@ and refuses to start if one already exists.
 | `M3 ...` / `M4 ...` (laser test buttons) | **ignored** (answer `ok` + info message) unless `allow_spindle: true` |
 | `$50=`, `$53=`, `$54=` | ignored (answer `ok`) |
 | `[ESP801]file` | `$MKS/Frame`: prints `Bounds:(x0,y0), (x1,y1)` and traces the outline, **torch off** |
+| pendant boot banner (`/*...`, `Board Support from Makerbase`) | dropped silently |
 | everything else | passed to FluidNC unchanged |
+
+Status reports sent to the pendant always contain both `MPos` and `WPos` (MKS format);
+the missing one is computed from the last `WCO`.
 
 When an SD job ends, the channel sends `SD Print Finish!` (the pendant waits for this text).
 

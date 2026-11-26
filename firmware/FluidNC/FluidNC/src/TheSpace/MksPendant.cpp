@@ -31,11 +31,24 @@ namespace TheSpace {
                 line[Channel::maxLine - 1] = '\0';
                 break;
             case PendantAction::Swallow:
-                log_info_to(*this, "Pendant: ignored " << line << " (" << r.reason << ")");
+                if (is_pendant_boot_banner(line)) {
+                    log_debug("Pendant: dropped boot banner line");
+                } else {
+                    log_info_to(*this, "Pendant: ignored " << line << " (" << r.reason << ")");
+                }
                 line[0] = '\0';  // an empty line is acknowledged with "ok"
                 break;
         }
         return true;
+    }
+
+    void MksPendantChannel::sendLine(MsgLevel level, const std::string* line) {
+        if (line && !line->empty() && (*line)[0] == '<') {
+            auto augmented = new std::string(_status.augment(*line));
+            delete line;
+            line = augmented;
+        }
+        UartChannel::sendLine(level, line);
     }
 
     void MksPendantChannel::handle() {
