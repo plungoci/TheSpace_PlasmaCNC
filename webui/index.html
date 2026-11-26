@@ -38,7 +38,7 @@ header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:c
 #stop:active{background:#c92424}
 main{display:grid;column-gap:12px;row-gap:0;padding:12px max(16px,2vw) 12px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-areas:"banner banner" "job job" "bed side" "bed jog" "tabs tabs";max-width:1400px;margin:0 auto}
 .banner{grid-area:banner}.job{grid-area:job}.bed{grid-area:bed}.side{grid-area:side}.jogcard{grid-area:jog}.tabs{grid-area:tabs}
-@media(min-width:1280px){main{max-width:1900px;grid-template-columns:minmax(0,1.2fr) minmax(0,.95fr) minmax(0,1fr);grid-template-areas:"banner banner banner" "job job job" "bed side tabs" "bed jog tabs"}.tabs{display:flex;flex-direction:column}.tabs .pane:not([hidden]){flex:1;display:flex;flex-direction:column}#log{flex:1;min-height:260px}}
+@media(min-width:1280px){main{max-width:1900px;grid-template-columns:minmax(0,1.2fr) minmax(0,.95fr) minmax(0,1fr);grid-template-areas:"banner banner banner" "job job job" "bed side tabs" "bed jog tabs"}.tabs{display:flex;flex-direction:column;contain:size;overflow:hidden;min-height:560px}.tabs .pane:not([hidden]){flex:1;min-height:0;display:flex;flex-direction:column;overflow:auto}#log{flex:1;min-height:200px}.tabs .tabbar button{min-width:0;flex:1 1 auto;padding:0 8px}.sgrp>div{max-height:none}}
 .card{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px}
 main>.card,main>.banner{margin-bottom:12px}
 .card h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--mute)}
@@ -106,6 +106,18 @@ input[type=number],input[type=text],select{background:#0d1014;border:1px solid v
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1d242b;border:1px solid var(--edge);border-radius:10px;padding:10px 16px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:9}
 .toast.on{opacity:1}
 .toast.er{border-color:#6b1d1d;color:#ffb3b3}
+.sgrp{border:1px solid var(--edge);border-radius:12px;margin-top:10px;background:var(--panel2)}
+.sgrp summary{cursor:pointer;padding:12px 14px;font-weight:700;min-height:44px}
+.sgrp>div{padding:0 12px 12px;max-height:60vh;overflow:auto}
+.sh{font-size:12px;color:var(--arc);font-weight:700;margin:12px 0 4px;overflow-wrap:anywhere}
+.sr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) 22px;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid #1e252c}
+.sr label{font-size:14px;overflow-wrap:anywhere}
+.sr input{min-height:36px;font-size:15px}
+.sr .st{font-size:14px;text-align:center}
+.sr.ok .st{color:var(--ok)}
+.sr.er .st{color:var(--stop)}
+.sr.er input{border-color:var(--stop)}
+#ssave.dirty{background:var(--arc2);border-color:var(--arc);color:#fff}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--edge);border-radius:14px;max-width:420px}
 dialog::backdrop{background:#000a}
 @media(max-width:900px){main{grid-template-columns:minmax(0,1fr);grid-template-areas:"banner" "job" "side" "bed" "jog" "tabs"}}
@@ -185,6 +197,7 @@ dialog::backdrop{background:#000a}
       <button role="tab" id="t-files" aria-selected="true">Files</button>
       <button role="tab" id="t-plasma" aria-selected="false">Plasma</button>
       <button role="tab" id="t-console" aria-selected="false">Console</button>
+      <button role="tab" id="t-settings" aria-selected="false">Settings</button>
       <button role="tab" id="t-setup" aria-selected="false">Setup</button>
     </div>
 
@@ -227,6 +240,18 @@ dialog::backdrop{background:#000a}
       <div class="chips" style="margin-top:8px">
         <button data-c="$I">$I</button><button data-c="$$">$$</button><button data-c="$SS">Startup log</button><button data-c="$MKS/SDList">SD list</button><button data-c="$G">Modes</button>
       </div>
+    </div>
+
+    <div class="pane" id="p-settings" hidden>
+      <div class="row" style="align-items:center">
+        <input type="text" id="sfind" placeholder="Search settings (e.g. steps, homing, pin)" style="flex:2 1 220px">
+        <button id="sreload" style="flex:0 0 auto">Reload</button>
+        <button id="ssave" style="flex:0 0 auto">Save to config.yaml</button>
+        <button id="sbye" style="flex:0 0 auto">Restart</button>
+      </div>
+      <p class="note" id="snote">Changes apply immediately. Machine settings are lost at restart unless saved to config.yaml; pins, UARTs and drivers only change after Save + Restart.</p>
+      <details open class="sgrp"><summary>Machine · config.yaml <span class="note" id="cfgn"></span></summary><div id="cfg"></div></details>
+      <details class="sgrp"><summary>Controller · stored settings ($S, includes the $$ Grbl ones) <span class="note" id="ctln"></span></summary><div id="ctl"></div></details>
     </div>
 
     <div class="pane" id="p-setup" hidden>
@@ -554,9 +579,101 @@ $('cmdf').onsubmit = e => { e.preventDefault(); const v = $('cmd').value.trim();
 $('cmd').onkeydown = e => { if (e.key === 'ArrowUp' && hi > 0) { $('cmd').value = hist[--hi]; e.preventDefault(); } if (e.key === 'ArrowDown' && hi < hist.length) { $('cmd').value = hist[++hi] || ''; e.preventDefault(); } };
 document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => send(b.dataset.c));
 
+// ---------- settings ----------
+// Synchronous command over HTTP: the reply text comes back in the response body.
+async function cmdText(c) {
+  if (demo) return demo.text(c);
+  const r = await fetch('/command?plain=' + encodeURIComponent(c));
+  return await r.text();
+}
+// Parse the YAML-like output of $CD into [{path, key, group, value}]
+function parseCD(text) {
+  const out = [], stack = []; let pend = null;
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\r$/, ''); if (!line.trim() || line.trim() === 'ok' || line.startsWith('[')) continue;
+    const m = line.match(/^( *)([^:]+):\s?(.*)$/); if (!m) continue;
+    const depth = m[1].length / 2, key = m[2].trim(); let val = m[3].trim();
+    // a "key:" with nothing under it was an empty value, not a section
+    if (pend && depth <= pend.depth) out.push(pend.row);
+    pend = null;
+    stack.length = depth;
+    if (val === '') {
+      stack[depth] = key;
+      const group = stack.slice(0, depth).join('/');
+      pend = {depth, row: {path: (group ? group + '/' : '') + key, key, group: group || '(top level)', value: ''}};
+      continue;
+    }
+    if (/^'.*'$/.test(val)) val = val.slice(1, -1);
+    const group = stack.slice(0, depth).join('/');
+    out.push({path: (group ? group + '/' : '') + key, key, group: group || '(top level)', value: val});
+  }
+  if (pend) out.push(pend.row);
+  return out;
+}
+function parseS(text) {
+  const out = [];
+  for (const raw of text.split('\n')) {
+    const m = raw.trim().match(/^\$([^=]+)=(.*)$/); if (!m) continue;
+    const name = m[1], i = name.lastIndexOf('/');
+    out.push({path: name, key: i < 0 ? name : name.slice(i + 1), group: i < 0 ? 'General' : name.slice(0, i), value: m[2]});
+  }
+  return out;
+}
+let CFG = [], CTL = [], cfgDirty = 0;
+function renderSet(el, list, kind) {
+  const q = $('sfind').value.trim().toLowerCase();
+  const rows = list.filter(r => !q || r.path.toLowerCase().includes(q) || r.value.toLowerCase().includes(q));
+  let html = '', last = null;
+  rows.forEach((r, i) => {
+    if (r.group !== last) { html += `<div class="sh">${esc(r.group)}</div>`; last = r.group; }
+    const id = kind + '-' + list.indexOf(r);
+    html += `<div class="sr" data-k="${kind}" data-i="${list.indexOf(r)}"><label for="${id}">${esc(r.key)}</label><input id="${id}" type="text" value="${esc(r.value)}" spellcheck="false" autocomplete="off"><span class="st"></span></div>`;
+  });
+  el.innerHTML = html || '<p class="note">Nothing matches.</p>';
+  $(kind === 'cfg' ? 'cfgn' : 'ctln').textContent = '· ' + rows.length + (q ? ' of ' + list.length : '');
+}
+const renderAll = () => { renderSet($('cfg'), CFG, 'cfg'); renderSet($('ctl'), CTL, 'ctl'); };
+async function loadSettings() {
+  $('cfg').innerHTML = $('ctl').innerHTML = '<p class="note">Loading…</p>';
+  try { CFG = parseCD(await cmdText('$CD')); CTL = parseS(await cmdText('$S')); renderAll(); }
+  catch (e) { $('cfg').innerHTML = '<p class="note">Could not read the settings from the controller.</p>'; }
+}
+async function applySetting(row) {
+  const kind = row.dataset.k, r = (kind === 'cfg' ? CFG : CTL)[+row.dataset.i], v = row.querySelector('input').value.trim();
+  if (v === r.value) return;
+  const c = kind === 'cfg' ? `$/${r.path}=${v}` : `$${r.path}=${v}`;
+  log('> ' + c, 'tx');
+  let txt = '';
+  try { txt = await cmdText(c); } catch (e) { txt = 'error: no reply'; }
+  const err = /error|invalid|can't|bad/i.test(txt);
+  row.classList.remove('ok', 'er'); row.classList.add(err ? 'er' : 'ok');
+  row.querySelector('.st').textContent = err ? '!' : '✓';
+  if (err) { const n = parseInt((txt.match(/error:?\s*(\d+)/) || [])[1]); toast(`${r.key}: ` + (ERR[n] || txt.trim().split('\n')[0] || 'rejected'), true); return; }
+  r.value = v;
+  if (kind === 'cfg') { cfgDirty++; $('ssave').classList.add('dirty'); $('ssave').textContent = `Save to config.yaml (${cfgDirty})`; }
+}
+for (const id of ['cfg', 'ctl']) {
+  $(id).addEventListener('change', e => { const row = e.target.closest('.sr'); if (row) applySetting(row); });
+  $(id).addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') { const row = e.target.closest('.sr'); const r = (row.dataset.k === 'cfg' ? CFG : CTL)[+row.dataset.i]; e.target.value = r.value; e.target.blur(); } });
+}
+$('sfind').oninput = renderAll;
+$('sreload').onclick = loadSettings;
+$('ssave').onclick = async () => {
+  if (!await confirmBox('Overwrite config.yaml on the board with the current machine settings?')) return;
+  const t = await cmdText('$CD=config.yaml');
+  if (/error/i.test(t)) return toast('Save failed: ' + t.trim(), true);
+  cfgDirty = 0; $('ssave').classList.remove('dirty'); $('ssave').textContent = 'Save to config.yaml'; toast('Saved to config.yaml');
+};
+$('sbye').onclick = async () => {
+  if (!await confirmBox('Restart the controller? Motion stops and the page reconnects in a few seconds.' + (cfgDirty ? ' Unsaved machine changes will be lost!' : ''))) return;
+  try { await cmdText('$Bye'); } catch (e) {}
+  toast('Restarting…');
+};
+
 // tabs
-const tabs = ['files', 'plasma', 'console', 'setup'];
-tabs.forEach(t => $('t-' + t).onclick = () => { tabs.forEach(u => { $('t-' + u).setAttribute('aria-selected', u === t); $('p-' + u).hidden = u !== t; }); if (t === 'setup') loadLocal(); });
+const tabs = ['files', 'plasma', 'console', 'settings', 'setup'];
+let settingsLoaded = false;
+tabs.forEach(t => $('t-' + t).onclick = () => { tabs.forEach(u => { $('t-' + u).setAttribute('aria-selected', u === t); $('p-' + u).hidden = u !== t; }); if (t === 'setup') loadLocal(); if (t === 'settings' && !settingsLoaded) { settingsLoaded = true; loadSettings(); } });
 
 // keyboard jog (arrows, PgUp/PgDn) when not typing
 document.addEventListener('keydown', e => {
@@ -612,6 +729,13 @@ function startDemo() {
     del: n => { files = files.filter(f => f.name !== n); },
     add: (n, s, ep) => { if (ep === '/files') lfiles = lfiles.filter(f => f.name !== n).concat({name: n, size: s}); else files = files.filter(f => f.name !== n).concat({name: n, size: s}); toast(n + ' added (demo)'); },
     lfiles: () => ({files: lfiles}),
+    text(c) {
+      const u = c.trim();
+      if (u === '$CD') return `board: MKS LS ESP32 PRO V2.1\nname: Plasma CNC (demo)\nstepping: \n  engine: Timed\n  idle_ms: 255\n  pulse_us: 4\nuart1: \n  txd_pin: gpio.17\n  rxd_pin: gpio.18\n  baud: 115200\naxes: \n  shared_stepper_disable_pin: gpio.8\n  X: \n    steps_per_mm: 80.000000\n    max_rate_mm_per_min: 8000.000000\n    acceleration_mm_per_sec2: 400.000000\n    max_travel_mm: 1000.000000\n    homing: \n      cycle: 0\n      feed_mm_per_min: 300.000000\n    motor0: \n      limit_neg_pin: 'gpio.39:low'\n      stepstick: \n        step_pin: gpio.16\n        direction_pin: gpio.15\n  Y: \n    steps_per_mm: 80.000000\n    max_rate_mm_per_min: 8000.000000\n    motor0: \n      limit_neg_pin: 'gpio.40:low'\n  Z: \n    steps_per_mm: 400.000000\n    max_rate_mm_per_min: 1500.000000\nprobe: \n  pin: 'gpio.37:low'\n  check_mode_start: true\nmks_pendant: \n  uart_num: 1\n  allow_spindle: false\n  frame_feed_mm_per_min: 3000.000000\nPlasmaSpindle: \n  enable_pin: gpio.1\n  arc_ok_pin: NO_PIN\n  arc_wait_ms: 1000\nok`;
+      if (u === '$S') return '$Grbl/Resolution/X=80.000\n$Grbl/Resolution/Y=80.000\n$Grbl/Resolution/Z=400.000\n$Grbl/MaxRate/X=8000.000\n$Grbl/Acceleration/X=400.000\n$Telnet/Enable=ON\n$Telnet/Port=23\n$HTTP/Port=80\n$Hostname=fluidnc\n$Report/Status=1\n$Message/Level=Info\n$Start/Message=Grbl \\V [FluidNC \\B (\\X) \\H]\nok';
+      if (/^\$\//.test(u) && /pin=/.test(u) && !/gpio\.\d+|NO_PIN/i.test(u)) return 'error:3';
+      return 'ok';
+    },
     ldel: n => { lfiles = lfiles.filter(f => f.name !== n); },
   };
   // open mid-use: the last cut of flange_200.nc and its frame are on the bed
