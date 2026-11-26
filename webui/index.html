@@ -36,10 +36,13 @@ header{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:c
 .dot.demo{background:var(--warn)}
 #stop{background:var(--stop);border-color:var(--stop);color:#fff;font-weight:800;min-width:96px}
 #stop:active{background:#c92424}
-main{display:grid;gap:12px;padding:12px max(16px,2vw) 24px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);max-width:1400px;margin:0 auto}
+main{display:grid;column-gap:12px;row-gap:0;padding:12px max(16px,2vw) 12px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-areas:"banner banner" "job job" "bed side" "bed jog" "tabs tabs";max-width:1400px;margin:0 auto}
+.banner{grid-area:banner}.job{grid-area:job}.bed{grid-area:bed}.side{grid-area:side}.jogcard{grid-area:jog}.tabs{grid-area:tabs}
+@media(min-width:1280px){main{max-width:1900px;grid-template-columns:minmax(0,1.2fr) minmax(0,.95fr) minmax(0,1fr);grid-template-areas:"banner banner banner" "job job job" "bed side tabs" "bed jog tabs"}.tabs{display:flex;flex-direction:column}.tabs .pane:not([hidden]){flex:1;display:flex;flex-direction:column}#log{flex:1;min-height:260px}}
 .card{background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:14px}
+main>.card,main>.banner{margin-bottom:12px}
 .card h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--mute)}
-.bed{grid-row:span 2;display:flex;flex-direction:column}
+.bed{display:flex;flex-direction:column}
 .fig{position:relative;flex:1;min-height:340px;border-radius:10px;overflow:hidden;background:#0a0c0f;border:1px solid #1c2229}
 .fig canvas{position:absolute;inset:0;width:100%;height:100%}
 .bedfoot{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;color:var(--mute);font-size:13px}
@@ -62,7 +65,7 @@ main{display:grid;gap:12px;padding:12px max(16px,2vw) 24px;grid-template-columns
 .pad .c{color:var(--mute);font-size:13px;font-weight:600}
 .zcol{display:grid;gap:6px;grid-template-rows:1fr 1fr 1fr}
 .zcol button{color:var(--arc);white-space:nowrap;padding:0 6px}
-.tabs{grid-column:1/-1}
+
 .tabbar{display:flex;gap:6px;border-bottom:1px solid var(--edge);margin:-4px -4px 12px;padding:0 4px 10px;overflow-x:auto}
 .tabbar button{flex:none;min-width:96px}
 .tabbar button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
@@ -70,12 +73,13 @@ main{display:grid;gap:12px;padding:12px max(16px,2vw) 24px;grid-template-columns
 table{width:100%;border-collapse:collapse}
 td,th{padding:8px 6px;border-bottom:1px solid var(--edge);text-align:left;vertical-align:middle}
 th{font-size:13px;color:var(--mute);font-weight:600}
-td.num,th.num{text-align:right;white-space:nowrap}
+td.num,th.num{text-align:right;white-space:nowrap;width:1%}
+td.act{width:1%}
 td.act{white-space:nowrap;text-align:right}
 td.act button{min-width:64px;margin-left:4px}
-.drop{border:1px dashed #3a4652;border-radius:12px;padding:14px;text-align:center;color:var(--mute);margin-top:12px}
+.drop{display:block;cursor:pointer;border:1px dashed #3a4652;border-radius:12px;padding:14px;text-align:center;color:var(--mute);margin-top:12px}
 .drop.over{border-color:var(--arc);color:var(--ink)}
-.job{display:none;grid-column:1/-1;align-items:center;gap:12px;flex-wrap:wrap}
+.job{display:none;align-items:center;gap:12px;flex-wrap:wrap}
 .job.on{display:flex}
 .bar{flex:1 1 220px;height:12px;background:#0a0c0f;border-radius:99px;overflow:hidden;border:1px solid var(--edge)}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--arc2),var(--arc))}
@@ -97,14 +101,14 @@ input[type=number],input[type=text],select{background:#0d1014;border:1px solid v
 .cmd{display:flex;gap:8px;margin-top:8px}
 .cmd input{flex:1}
 .note{font-size:13px;color:var(--mute)}
-.banner{display:none;background:#2b2108;border:1px solid #6b5317;color:#ffd77a;border-radius:10px;padding:8px 12px;font-size:13px;grid-column:1/-1}
+.banner{display:none;background:#2b2108;border:1px solid #6b5317;color:#ffd77a;border-radius:10px;padding:8px 12px;font-size:13px}
 .banner.on{display:block}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1d242b;border:1px solid var(--edge);border-radius:10px;padding:10px 16px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:9}
 .toast.on{opacity:1}
 .toast.er{border-color:#6b1d1d;color:#ffb3b3}
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--edge);border-radius:14px;max-width:420px}
 dialog::backdrop{background:#000a}
-@media(max-width:900px){main{grid-template-columns:minmax(0,1fr)}.bed{grid-row:auto;order:2}.side{order:1}.jogcard{order:3}.tabs{order:4}.job{order:0}.banner{order:-1}}
+@media(max-width:900px){main{grid-template-columns:minmax(0,1fr);grid-template-areas:"banner" "job" "side" "bed" "jog" "tabs"}}
 @media(max-width:600px){.brand span{display:none}.fig{min-height:260px}.jog{grid-template-columns:minmax(0,1fr) 76px}td.act button{min-width:52px;padding:0 8px}.hide-s{display:none}}
 @media(prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
