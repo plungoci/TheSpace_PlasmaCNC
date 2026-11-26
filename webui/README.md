@@ -15,7 +15,9 @@ A dark, plasma-oriented web interface for FluidNC, served by the controller itse
 - Settings: every FluidNC setting, editable - the whole config.yaml tree (`$CD`, applied with
   `$/path=value`) and the stored controller settings (`$S`, which include the `$$` Grbl ones as
   `$Grbl/...`), with search, Save to config.yaml (`$CD=config.yaml`) and Restart (`$Bye`)
-- Setup: IHS values, bed size, and **Board files** - list, download, delete and upload files on the
+- Setup: **axis calibration** (move a set distance, enter the measured one, new steps/mm is
+  computed, applied and saved) with a theoretical steps/mm calculator (belt, lead screw, rack);
+  IHS values, bed size, and **Board files** - list, download, delete and upload files on the
   controller flash (config.yaml, this page). Upload a new `index.html.gz` there to update the UI.
 - Opened from a PC file or a preview it runs a simulated machine (demo mode)
 

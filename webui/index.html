@@ -255,6 +255,25 @@ dialog::backdrop{background:#000a}
     </div>
 
     <div class="pane" id="p-setup" hidden>
+      <div class="card" style="background:var(--panel2);margin-bottom:12px">
+        <h2>Axis calibration (steps per mm)</h2>
+        <div class="chips" id="calax"><button aria-pressed="true" data-a="X">X</button><button aria-pressed="false" data-a="Y">Y</button><button aria-pressed="false" data-a="Z">Z</button></div>
+        <label class="f">Current steps/mm<input type="text" id="c-cur" readonly class="mono"></label>
+        <label class="f">1 · Move this far (mm)<input type="number" id="c-cmd" value="100" step="10"></label>
+        <button id="c-move" style="width:100%">Move <span id="c-dir">X+</span> by the distance above</button>
+        <label class="f" style="margin-top:10px">2 · Measured with a ruler (mm)<input type="number" id="c-meas" step="0.1" placeholder="e.g. 50"></label>
+        <label class="f">New steps/mm<input type="text" id="c-new" readonly class="mono"></label>
+        <button id="c-apply" style="width:100%" disabled>3 · Apply &amp; save to config.yaml</button>
+        <p class="note">Mark the torch position before moving. A result of exactly half or double usually means a microstep mismatch between the driver and the config.</p>
+        <details style="margin-top:8px"><summary style="cursor:pointer;min-height:36px">Theoretical value calculator</summary>
+          <label class="f">Motor steps per turn<select id="k-st"><option>200</option><option>400</option></select></label>
+          <label class="f">Microsteps<select id="k-ms"><option>8</option><option selected>16</option><option>32</option><option>64</option></select></label>
+          <label class="f">Drive<select id="k-dr"><option value="belt">Belt + pulley</option><option value="screw">Lead screw</option><option value="rack">Rack + pinion</option></select></label>
+          <label class="f" id="k-l1">Belt pitch (mm)<input type="number" id="k-a" value="2" step="0.5"></label>
+          <label class="f" id="k-l2">Pulley teeth<input type="number" id="k-b" value="20" step="1"></label>
+          <p>Steps/mm: <b class="mono" id="k-out">80.000</b> <button id="k-use" style="min-height:32px;margin-left:8px">Use for this axis</button></p>
+        </details>
+      </div>
       <div class="plasma">
         <div>
           <h2 style="font-size:13px;color:var(--mute);font-weight:600">IHS</h2>
@@ -670,10 +689,58 @@ $('sbye').onclick = async () => {
   toast('Restarting…');
 };
 
+// ---------- axis calibration ----------
+let calA = 'X', calCur = null;
+async function calRead() {
+  $('c-cur').value = '…'; calCur = null;
+  try {
+    const t = await cmdText(`$/axes/${calA.toLowerCase()}/steps_per_mm`);
+    const m = t.match(/steps_per_mm\s*[=:]\s*(-?[\d.]+)/i);
+    if (m) { calCur = parseFloat(m[1]); $('c-cur').value = calCur.toFixed(3); } else $('c-cur').value = 'not read';
+  } catch (e) { $('c-cur').value = 'not read'; }
+  calCalc();
+}
+function calCalc() {
+  const cmd = parseFloat($('c-cmd').value), meas = parseFloat($('c-meas').value);
+  const ok = calCur && cmd > 0 && meas > 0;
+  $('c-new').value = ok ? (calCur * cmd / meas).toFixed(3) : '';
+  $('c-apply').disabled = !ok;
+  $('c-dir').textContent = calA + '+';
+}
+$('calax').onclick = e => { const b = e.target.closest('button'); if (!b) return; calA = b.dataset.a; [...$('calax').children].forEach(c => c.setAttribute('aria-pressed', c === b)); $('c-meas').value = ''; calRead(); };
+$('c-cmd').oninput = calCalc; $('c-meas').oninput = calCalc;
+$('c-move').onclick = async () => {
+  const d = parseFloat($('c-cmd').value); if (!(d > 0)) return toast('Enter a distance', true);
+  if (!await confirmBox(`Move ${calA} by +${d} mm? Make sure there is room on the machine.`)) return;
+  send(`$J=G91 ${calA}${d} F${calA === 'Z' ? 300 : 1000}`);
+};
+$('c-apply').onclick = async () => {
+  const v = $('c-new').value; if (!v) return;
+  if (!await confirmBox(`Set ${calA} steps/mm from ${calCur} to ${v} and save to config.yaml?`)) return;
+  const t1 = await cmdText(`$/axes/${calA.toLowerCase()}/steps_per_mm=${v}`);
+  if (/error/i.test(t1)) return toast('Not applied: ' + t1.trim(), true);
+  const t2 = await cmdText('$CD=config.yaml');
+  if (/error/i.test(t2)) return toast('Applied, but saving failed: ' + t2.trim(), true);
+  toast(`${calA}: ${v} steps/mm saved`); $('c-meas').value = ''; settingsLoaded = false; calRead();
+};
+// theoretical calculator
+function kCalc() {
+  const st = +$('k-st').value, ms = +$('k-ms').value, dr = $('k-dr').value, a = parseFloat($('k-a').value), b = parseFloat($('k-b').value);
+  $('k-l1').firstChild.textContent = dr === 'belt' ? 'Belt pitch (mm)' : dr === 'screw' ? 'Lead (mm per turn)' : 'Rack module';
+  $('k-l2').style.display = dr === 'screw' ? 'none' : '';
+  $('k-l2').firstChild.textContent = dr === 'belt' ? 'Pulley teeth' : 'Pinion teeth';
+  const mmPerTurn = dr === 'belt' ? a * b : dr === 'screw' ? a : Math.PI * a * b;
+  $('k-out').textContent = mmPerTurn > 0 ? (st * ms / mmPerTurn).toFixed(3) : '-';
+}
+for (const id of ['k-st', 'k-ms', 'k-dr', 'k-a', 'k-b']) $(id).oninput = $(id).onchange = kCalc;
+$('k-dr').addEventListener('change', () => { const d = $('k-dr').value; $('k-a').value = d === 'belt' ? 2 : d === 'screw' ? 8 : 1; $('k-b').value = 20; kCalc(); });
+$('k-use').onclick = () => { const v = $('k-out').textContent; if (calCur && parseFloat(v) > 0) { $('c-meas').value = (calCur * parseFloat($('c-cmd').value) / parseFloat(v)).toFixed(3); calCalc(); } };
+kCalc();
+
 // tabs
 const tabs = ['files', 'plasma', 'console', 'settings', 'setup'];
 let settingsLoaded = false;
-tabs.forEach(t => $('t-' + t).onclick = () => { tabs.forEach(u => { $('t-' + u).setAttribute('aria-selected', u === t); $('p-' + u).hidden = u !== t; }); if (t === 'setup') loadLocal(); if (t === 'settings' && !settingsLoaded) { settingsLoaded = true; loadSettings(); } });
+tabs.forEach(t => $('t-' + t).onclick = () => { tabs.forEach(u => { $('t-' + u).setAttribute('aria-selected', u === t); $('p-' + u).hidden = u !== t; }); if (t === 'setup') { loadLocal(); calRead(); } if (t === 'settings' && !settingsLoaded) { settingsLoaded = true; loadSettings(); } });
 
 // keyboard jog (arrows, PgUp/PgDn) when not typing
 document.addEventListener('keydown', e => {
@@ -733,6 +800,8 @@ function startDemo() {
       const u = c.trim();
       if (u === '$CD') return `board: MKS LS ESP32 PRO V2.1\nname: Plasma CNC (demo)\nstepping: \n  engine: Timed\n  idle_ms: 255\n  pulse_us: 4\nuart1: \n  txd_pin: gpio.17\n  rxd_pin: gpio.18\n  baud: 115200\naxes: \n  shared_stepper_disable_pin: gpio.8\n  X: \n    steps_per_mm: 80.000000\n    max_rate_mm_per_min: 8000.000000\n    acceleration_mm_per_sec2: 400.000000\n    max_travel_mm: 1000.000000\n    homing: \n      cycle: 0\n      feed_mm_per_min: 300.000000\n    motor0: \n      limit_neg_pin: 'gpio.39:low'\n      stepstick: \n        step_pin: gpio.16\n        direction_pin: gpio.15\n  Y: \n    steps_per_mm: 80.000000\n    max_rate_mm_per_min: 8000.000000\n    motor0: \n      limit_neg_pin: 'gpio.40:low'\n  Z: \n    steps_per_mm: 400.000000\n    max_rate_mm_per_min: 1500.000000\nprobe: \n  pin: 'gpio.37:low'\n  check_mode_start: true\nmks_pendant: \n  uart_num: 1\n  allow_spindle: false\n  frame_feed_mm_per_min: 3000.000000\nPlasmaSpindle: \n  enable_pin: gpio.1\n  arc_ok_pin: NO_PIN\n  arc_wait_ms: 1000\nok`;
       if (u === '$S') return '$Grbl/Resolution/X=80.000\n$Grbl/Resolution/Y=80.000\n$Grbl/Resolution/Z=400.000\n$Grbl/MaxRate/X=8000.000\n$Grbl/Acceleration/X=400.000\n$Telnet/Enable=ON\n$Telnet/Port=23\n$HTTP/Port=80\n$Hostname=fluidnc\n$Report/Status=1\n$Message/Level=Info\n$Start/Message=Grbl \\V [FluidNC \\B (\\X) \\H]\nok';
+      const sp = u.match(/^\$\/axes\/(\w)\/steps_per_mm(=([\d.]+))?$/i);
+      if (sp) { demo.spm = demo.spm || {x: 80, y: 80, z: 400}; if (sp[3]) { demo.spm[sp[1].toLowerCase()] = +sp[3]; return 'ok'; } return `$/axes/${sp[1].toLowerCase()}/steps_per_mm=${demo.spm[sp[1].toLowerCase()].toFixed(3)}\nok`; }
       if (/^\$\//.test(u) && /pin=/.test(u) && !/gpio\.\d+|NO_PIN/i.test(u)) return 'error:3';
       return 'ok';
     },
