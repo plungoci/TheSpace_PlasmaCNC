@@ -375,6 +375,7 @@ const bedRO = new ResizeObserver(draw); bedRO.observe(cv);
 // ---------- protocol parsing ----------
 let lastPushed = 0;
 function onStatus(line) {
+  waitStatus = false;
   const body = line.slice(1, -1).split('|');
   M.state = body[0];
   let gotW = null, accS = false;
@@ -411,6 +412,7 @@ function onLine(line) {
 
 // ---------- transport: real controller (WebSocket + HTTP) or demo ----------
 let ws = null, demo = null, buf = '', fireT = null;
+let waitStatus = false, askedAt = 0, everConnected = false, drops = 0, filesLoaded = false;
 const send = (cmd, quiet) => {
   if (!quiet) log('> ' + cmd, 'tx');
   if (demo) return demo.cmd(cmd);
@@ -419,22 +421,38 @@ const send = (cmd, quiet) => {
 const rt = ch => { if (demo) return demo.rt(ch); if (ws && ws.readyState === 1) ws.send(ch); };
 function setLink(mode) {
   $('dot').className = 'dot' + (mode === 'on' ? ' on' : mode === 'demo' ? ' demo' : '');
+  if (mode === 're') { $('linktxt').textContent = 'Reconnecting…'; return; }
   $('linktxt').textContent = mode === 'on' ? location.host : mode === 'demo' ? 'Demo' : 'Disconnected';
 }
 function connect() {
   if (!/^https?:$/.test(location.protocol) || /claude|anthropic|usercontent/.test(location.hostname)) return startDemo();
-  try { ws = new WebSocket('ws://' + location.host + '/'); } catch (e) { return startDemo(); }
+  // independent_session: each tab gets its own channel; otherwise FluidNC keeps one
+  // websocket per browser session and tabs would keep closing each other.
+  try { ws = new WebSocket('ws://' + location.host + '/?independent_session=1'); } catch (e) { return startDemo(); }
   ws.binaryType = 'arraybuffer';
-  const failT = setTimeout(() => { if (ws.readyState !== 1) { ws.close(); startDemo(); } }, 3500);
-  ws.onopen = () => { clearTimeout(failT); setLink('on'); loadFiles(); };
+  const failT = setTimeout(() => { if (ws.readyState !== 1) { ws.close(); if (!everConnected) startDemo(); } }, 3500);
+  ws.onopen = () => { clearTimeout(failT); everConnected = true; drops = 0; waitStatus = false; setLink('on'); if (!filesLoaded) { filesLoaded = true; loadFiles(); } };
   ws.onmessage = e => {
     if (typeof e.data === 'string') return; // currentID / PING
     buf += new TextDecoder().decode(e.data);
     let i; while ((i = buf.indexOf('\n')) >= 0) { onLine(buf.slice(0, i)); buf = buf.slice(i + 1); }
   };
-  ws.onclose = () => { if (demo) return; setLink('off'); M.state = 'Offline'; render(); setTimeout(connect, 2000); };
+  ws.onclose = () => {
+    if (demo) return;
+    drops++;
+    // a single short drop shows as "Reconnecting", only repeated failures as offline
+    if (drops > 2) { setLink('off'); M.state = 'Offline'; render(); } else setLink('re');
+    setTimeout(connect, drops > 2 ? 2000 : 300);
+  };
 }
-setInterval(() => { if (demo || (ws && ws.readyState === 1)) rt('?'); }, 250);
+// Ask for status only when the previous report has arrived (or 1.5 s passed), faster while moving.
+setInterval(() => {
+  if (demo) return rt('?');
+  if (!ws || ws.readyState !== 1) return;
+  const now = Date.now(), moving = !/^(Idle|Alarm|Offline)/.test(M.state), gap = moving ? 200 : 600;
+  if ((waitStatus && now - askedAt < 1500) || now - askedAt < gap) return;
+  waitStatus = true; askedAt = now; ws.send('?');
+}, 100);
 
 async function loadFiles() {
   let data;
