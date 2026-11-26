@@ -18,16 +18,19 @@ A dark, plasma-oriented web interface for FluidNC, served by the controller itse
 
 ## Install on the board
 
-1. Open the current WebUI (http://192.168.0.1 on the `FluidNC` WiFi).
-2. In the file manager for the local filesystem (FluidNC flash, not SD), upload
-   `dist/webui3.html.gz` first - this keeps the original FluidNC WebUI at `/webui3.html`.
-3. Upload `dist/index.html.gz` (replaces the original start page).
-4. Reload http://192.168.0.1
+1. Connect to the `FluidNC` WiFi and open FluidNC's built-in file manager:
+   **http://192.168.0.1/?forcefallback=yes** (always available, whatever index.html is on the board).
+2. Upload `dist/index.html.gz` - it replaces the start page.
+3. Reload http://192.168.0.1 with Ctrl+F5.
+
+FluidNC serves only `index.html(.gz)` as a page; any other file on the flash (for example a
+renamed copy of the original WebUI) is offered as a download, not displayed. The original
+FluidNC WebUI is kept in `dist/webui3.html.gz` - to go back, upload it **as** `index.html.gz`.
 
 ## Update the UI later
 
 Setup tab -> Board files -> upload the new `index.html.gz` (it overwrites the old one), then reload
-with Ctrl+F5. Without this page (or before the first install), from a PC on the board's WiFi:
+with Ctrl+F5. Without this page: http://192.168.0.1/?forcefallback=yes, or from a PC on the board's WiFi:
 
 ```bash
 curl -F "path=/" -F "myfile[]=@index.html.gz;filename=/index.html.gz" http://192.168.0.1/files

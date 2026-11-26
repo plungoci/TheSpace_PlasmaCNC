@@ -240,7 +240,7 @@ dialog::backdrop{background:#000a}
           <label class="f">Bed size X (mm)<input type="number" id="s-bx" step="10"></label>
           <label class="f">Bed size Y (mm)<input type="number" id="s-by" step="10"></label>
           <label class="f">Torch test max (s)<input type="number" id="s-tf" step="0.5"></label>
-          <p class="note">Saved in this browser. The original FluidNC WebUI stays on the board as <a href="/webui3.html" style="color:var(--arc)">webui3.html</a> if you uploaded it.</p>
+          <p class="note">Saved in this browser. FluidNC's built-in file manager is always at <a href="/?forcefallback=yes" style="color:var(--arc)">/?forcefallback=yes</a>.</p>
         </div>
       </div>
       <h2 style="font-size:13px;color:var(--mute);font-weight:600;margin-top:18px">Board files (controller flash: config.yaml, this page)</h2>
@@ -552,7 +552,7 @@ function startDemo() {
   $('banner').classList.add('on'); setLink('demo');
   let pos = [120, 80, 0], wco = [100, 50, 0], state = 'Idle', queue = [], job = null, torch = false;
   let files = [{name: 'flange_200.nc', size: 18432}, {name: 'bracket_x4.nc', size: 9216}, {name: 'test.nc', size: 338}];
-  let lfiles = [{name: 'config.yaml', size: 4425}, {name: 'index.html.gz', size: 12633}, {name: 'webui3.html.gz', size: 111625}, {name: 'favicon.ico', size: 1150}];
+  let lfiles = [{name: 'config.yaml', size: 4425}, {name: 'index.html.gz', size: 13113}, {name: 'favicon.ico', size: 1150}];
   const path = () => { const p = [[10, 10, 0], [10, 10, 1]]; for (const [x, y] of [[90, 10], [90, 60], [10, 60], [10, 10]]) p.push([x, y, 1]); p.push([10, 10, 0], [50, 35, 0]); for (let a = 0; a <= 360; a += 10) p.push([50 + 12 * Math.cos(a * Math.PI / 180), 35 + 12 * Math.sin(a * Math.PI / 180), 1]); p.push([0, 0, 0]); return p; };
   const move = (to, f) => queue.push({to, f});
   const report = () => {
