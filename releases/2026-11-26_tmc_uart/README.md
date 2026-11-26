@@ -45,3 +45,7 @@ restarting must change the holding torque / noise.
 - Microsteps are 16, the same as the board's standalone setting, so `steps_per_mm` should not change.
   Check with the calibration tool anyway.
 - Save runtime changes with `$CD=config.yaml`.
+
+## Result (2026-11-26)
+Second build (write-only) flashed on the V2.2 board: X, Y and Z all move. With the first
+build (drivers not detected) Z did not move either.
