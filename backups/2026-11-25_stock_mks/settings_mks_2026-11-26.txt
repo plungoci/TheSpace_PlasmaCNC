@@ -1,0 +1,275 @@
+# Settings dump from COM4 @ 115200 - 2026-11-26 09:19:13
+
+## $I
+[V4.00(8M.H35.20240226)]
+[VER:1.1h.2024022601:]
+[OPT:VPH,63,256]
+[MSG:Using machine:MKS DLC32]
+ok
+[MSG:Mode=AP:SSDI=MKS_DLC29837:IP=192.168.4.1:MAC=82-45-6B-6C-8D-74]
+ok
+
+## $$
+$54=12345678
+$53=MKS_DLC
+$52=12345678
+$51=MKS_DLC
+$0=10
+$1=255
+$2=0
+$3=5
+$4=0
+$5=1
+$6=1
+$10=1
+$11=0.010
+$12=0.002
+$13=0
+$20=0
+$21=0
+$22=0
+$23=5
+$24=300.000
+$25=1000.000
+$26=250.000
+$27=1.000
+$28=1000.000
+$30=1000.000
+$31=0.000
+$32=1
+$41=1
+$47=1
+$46=1
+$102=100
+$101=100
+$45=2
+$44=1
+$43=1
+$453=10.000
+$49=80
+$48=1
+$40=1
+$42=1
+$50=1
+$100=100.000
+$103=100.000
+$104=100.000
+$105=100.000
+$110=6000.000
+$111=6000.000
+$112=6000.000
+$113=1000.000
+$114=1000.000
+$115=1000.000
+$120=500.000
+$121=500.000
+$122=500.000
+$123=200.000
+$124=200.000
+$125=200.000
+$130=450.000
+$131=450.000
+$132=50.000
+$133=300.000
+$134=300.000
+$135=300.000
+ok
+
+## $S
+$Wifi STA PWD=12345678
+$Wifi STA SSID=MKS_DLC
+$Sta/IPMode=DHCP
+$Sta/IP=0.0.0.0
+$Sta/Gateway=0.0.0.0
+$Sta/Netmask=0.0.0.0
+$Wifi AP PWD=12345678
+$Wifi AP SSID=MKS_DLC
+$AP/IP=192.168.4.1
+$AP/Channel=1
+$System/Hostname=mks_grbl
+$Http/Enable=ON
+$Http/Port=80
+$Telnet/Enable=ON
+$Telnet/Port=8080
+$Radio/Mode=AP
+$Message/Level=Info
+$User/Macro0=
+$User/Macro1=
+$User/Macro2=
+$User/Macro3=
+$Homing/Cycle0=XY
+$Homing/Cycle1=
+$Homing/Cycle2=
+$Homing/Cycle3=
+$Homing/Cycle4=
+$Homing/Cycle5=
+$Report/StallGuard=
+$Stepper/Enable/Delay=0
+$Stepper/Direction/Delay=0
+$Stepper/Pulse=10
+$Stepper/IdleTime=255
+$Stepper/StepInvert=
+$Stepper/DirInvert=XZ
+$Stepper/EnableInvert=Off
+$Limits/Invert=On
+$Probe/Invert=On
+$Report/Status=1
+$GCode/JunctionDeviation=0.010
+$GCode/ArcTolerance=0.002
+$Report/Inches=Off
+$Firmware/Build=
+$Limits/Soft=Off
+$Limits/Hard=Off
+$Homing/Enable=Off
+$Homing/DirInvert=XZ
+$Homing/Squared=
+$Homing/Feed=300.000
+$Homing/Seek=1000.000
+$Homing/Debounce=250.000
+$Homing/Pulloff=1.000
+$Spindle/PWM/Frequency=1000.000
+$GCode/MaxS=1000.000
+$GCode/MinS=0.000
+$Laser/FullPower=1000
+$GCode/LaserMode=On
+$GCode/Line1=
+$GCode/Line0=
+$Spindle/Enable/Invert=Off
+$Spindle/Enable/OffWithSpeed=Off
+$Coolant/Delay/TurnOn=1.000
+$Spindle/Delay/SpinDown=0.000
+$Spindle/Delay/SpinUp=0.000
+$Spindle/PWM/Invert=Off
+$Spindle/PWM/Off=0.000
+$Spindle/PWM/Min=0.000
+$Spindle/PWM/Max=1000.000
+$Spindle/Type=LASER
+$beep_status=1
+$Uart1 enable=On
+$uart baud rate=1
+$roll mode steps=100
+$normal mode steps=100
+$print mode select=2
+$air cool value=0
+$air cool/Enable=1
+$flame chack/Enable=1
+$Thickness of knife=10.000
+$y/z mode steps=80
+$safe door/Enable=1
+$5V Pin state=1
+$Probe/Enable=1
+$Wifi mode=1
+$X/StepsPerMm=100.000
+$Y/StepsPerMm=80.000
+$Z/StepsPerMm=80.000
+$A/StepsPerMm=100.000
+$B/StepsPerMm=100.000
+$C/StepsPerMm=100.000
+$X/MaxRate=6000.000
+$Y/MaxRate=6000.000
+$Z/MaxRate=6000.000
+$A/MaxRate=1000.000
+$B/MaxRate=1000.000
+$C/MaxRate=1000.000
+$X/Acceleration=500.000
+$Y/Acceleration=500.000
+$Z/Acceleration=500.000
+$A/Acceleration=200.000
+$B/Acceleration=200.000
+$C/Acceleration=200.000
+$X/Home/Mpos=0.000
+$Y/Home/Mpos=0.000
+$Z/Home/Mpos=0.000
+$A/Home/Mpos=0.000
+$B/Home/Mpos=0.000
+$C/Home/Mpos=0.000
+$X/MaxTravel=450.000
+$Y/MaxTravel=450.000
+$Z/MaxTravel=50.000
+$A/MaxTravel=300.000
+$B/MaxTravel=300.000
+$C/MaxTravel=300.000
+$X/Current/Run=0.250
+$Y/Current/Run=0.250
+$Z/Current/Run=0.250
+$A/Current/Run=0.250
+$B/Current/Run=0.250
+$C/Current/Run=0.250
+$X/Current/Hold=0.125
+$Y/Current/Hold=0.125
+$Z/Current/Hold=0.125
+$A/Current/Hold=0.125
+$B/Current/Hold=0.125
+$C/Current/Hold=0.125
+$X/Microsteps=16
+$Y/Microsteps=16
+$Z/Microsteps=16
+$A/Microsteps=16
+$B/Microsteps=16
+$C/Microsteps=16
+$X/StallGuard=16
+$Y/StallGuard=16
+$Z/StallGuard=16
+$A/StallGuard=16
+$B/StallGuard=16
+$C/StallGuard=16
+$Errors/Verbose=Off
+ok
+
+## $CMD
+$Settings/Restore or $RST
+$GCode/StartupLines or $N
+$Build/Info or $I
+$System/Sleep or $SLP
+$Home/C or $HC
+$Home/B or $HB
+$Home/A or $HA
+$Home/Z or $HZ
+$Home/Y or $HY
+$Home/X or $HX
+$Motor/Disable or $MD
+$Home or $H
+$GCode/Offsets or $#
+$Settings/Stats or $V
+$Settings/Erase or $NVX
+$Alarm/Disable or $X
+$GCode/Check or $C
+$GCode/Modes or $G
+$Errors/List or $E
+$Alarms/List or $A
+$Commands/List or $CMD
+$Settings/ListChanged or $SC
+$Settings/List or $S
+$GrblNames/List or $L
+$ExtendedSettings/List or $+
+$GrblSettings/List or $$
+$Jog or $J
+$State or $T
+$Help or $
+$Upload file or $ESP486 =path
+$WebUI/Help or $ESP
+$WebUI/Help or $ESP0
+$Sta/Setup or $ESP103 =IP=ipaddress MSK=netmask GW=gateway
+$System/IP or $ESP111
+$Radio/State or $ESP115 =STA|AP|BT|OFF
+$SD/Status or $ESP200
+$set Z axis or $ESP212
+$BLE Start/Stop or $ESP211
+$SD/List or $ESP210
+$SD/Delete or $ESP215 =file_or_directory_path
+$SD/Frame or $ESP801 =path
+$SD/Run or $ESP220 =path
+$SD/Show or $ESP221 =path
+$WebUI/List or $ESP400
+$WebUI/Set or $ESP401 =P=position T=type V=value
+$WiFi/ListAPs or $ESP410
+$System/Stats or $ESP420
+$System/Control or $ESP444 =RESTART
+$LocalFS/ListJSON =path
+$LocalFS/List =path
+$LocalFS/Run or $ESP700 =path
+$LocalFS/Show or $ESP701 =path
+$LocalFS/Format or $ESP710 =FORMAT
+$LocalFS/Size or $ESP720
+$Firmware/Info or $ESP800
+ok

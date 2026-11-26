@@ -58,3 +58,15 @@ Partition table (identical to MKS `LAS_YD ESP TFT35 V4.1_V1.0.6_20240314`):
 - Firmware version string: **`YD_V2.0.0_20240223`** - older than the MKS release file
   (`YD_V2.0.0_20240314`). Bootloader, partition table and spiffs are identical to that release.
 - NVS keys: `screen beeper`, `MachineTheme`.
+
+## Settings snapshot (2026-11-26)
+
+`settings_mks_2026-11-26.txt` - output of `$I`, `$$`, `$S`, `$CMD` (tools/grbl_dump_settings.py),
+taken after `$45=2` and `$47=1`. Notable values:
+
+- `$X/Current/Run=0.250`, `$Y/Current/Run=0.250`, `Current/Hold=0.125` (A) - very low, if applied
+- `$X/Microsteps=16` for all axes
+- `$$` shows `$100=$101=$102=100`, but `$S` shows `Y/StepsPerMm=80`, `Z/StepsPerMm=80`
+  (MKS "y/z mode steps=80" overrides Y/Z in XYZ mode)
+- `$Stepper/DirInvert=XZ`, `$Limits/Invert=On`, `$Probe/Invert=On`, `$Spindle/Type=LASER`
+- `$I`: `[VER:1.1h.2024022601:]`, `[MSG:Using machine:MKS DLC32]`
