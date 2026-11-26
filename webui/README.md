@@ -12,6 +12,8 @@ A dark, plasma-oriented web interface for FluidNC, served by the controller itse
 - Job bar with progress, pause, resume, stop
 - Plasma: hold-to-fire torch test (armed, auto-off), IHS test, input LEDs (probe, limits, door)
 - Console with history and quick commands
+- Setup: IHS values, bed size, and **Board files** - list, download, delete and upload files on the
+  controller flash (config.yaml, this page). Upload a new `index.html.gz` there to update the UI.
 - Opened from a PC file or a preview it runs a simulated machine (demo mode)
 
 ## Install on the board
@@ -22,6 +24,15 @@ A dark, plasma-oriented web interface for FluidNC, served by the controller itse
 3. Upload `dist/index.html.gz` (replaces the original start page).
 4. Reload http://192.168.0.1
 
+## Update the UI later
+
+Setup tab -> Board files -> upload the new `index.html.gz` (it overwrites the old one), then reload
+with Ctrl+F5. Without this page (or before the first install), from a PC on the board's WiFi:
+
+```bash
+curl -F "path=/" -F "myfile[]=@index.html.gz;filename=/index.html.gz" http://192.168.0.1/files
+```
+
 ## Build
 
 `dist/index.html.gz` is `index.html` compressed: `gzip -9 -n -c webui/index.html > webui/dist/index.html.gz`
@@ -30,3 +41,4 @@ A dark, plasma-oriented web interface for FluidNC, served by the controller itse
 - WebSocket `ws://<board>/` - commands as text lines, realtime `?` `!` `~` Ctrl-X and jog cancel 0x85;
   controller output arrives as binary frames
 - `GET /upload?path=/` SD list (JSON), `&action=delete&filename=` delete, `POST /upload` multipart upload
+- `GET /files?path=/`, `POST /files` - the same for the controller flash (LocalFS)
