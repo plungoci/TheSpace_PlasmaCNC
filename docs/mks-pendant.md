@@ -34,6 +34,21 @@ Sequence:
 6. Each jog button press sends one line, no spaces: `$J=G91Y5F1000`, `$J=G91X5F1000`
    (5 mm step, F1000), answered with `ok`.
 
+### SD list and SD job (second capture, test.nc)
+
+Raw logs: [`captures/2026-11-26_sd_board_to_pendant.txt`](captures/2026-11-26_sd_board_to_pendant.txt),
+[`captures/2026-11-26_sd_pendant_to_board.txt`](captures/2026-11-26_sd_pendant_to_board.txt).
+
+7. `[ESP210]` -> empty line, `[FILE:/test.nc|SIZE:338]`, `[SD Free:14.83 GB Used:128.00 KB Total:14.83 GB]`, `ok`.
+8. `[ESP220]/test.nc` (path **with** leading `/`) -> **no `ok`** at all; the job starts and status reports
+   get `|SD:<percent>,/test.nc`.
+9. During the job the pendant keeps sending `?` + newline; MKS answers the empty line with
+   `error 120` (no colon) and `[MSG:SD card job running]` - the pendant ignores it.
+10. At the end: `SD Print Finish!`, then `<Idle|...>` and `ok` again.
+
+So the pendant does not wait for an `ok` after `[ESP220]` - FluidNC sending `ok` only at the
+end of the job is fine.
+
 ### FluidNC differences and how the module handles them
 
 | Item | MKS | FluidNC | Handling |
@@ -43,6 +58,10 @@ Sequence:
 | `$I` | `[VER:1.1h.2024022601:]` ... `MKS DLC32` | `[VER:4.x FluidNC ...]`, `[OPT:PHS]` | test on hardware; rewrite if the pendant rejects it |
 | Status | MPos **and** WPos | MPos (or WPos) + WCO sometimes | **missing one added** from the last WCO (`StatusAugmenter`) |
 | `?` + newline, jog, `ok` | | same | no change needed |
+| `[ESP210]` list | `[FILE:/name\|SIZE:n]`, `[SD Free:..]` | `[FILE: name\|SIZE:n]`, `[sd Free:..]` | **rewritten** to `$MKS/SDList` |
+| `[ESP220]/file` | job starts, no `ok` | job starts, `ok` at the end (checked in the simulator) | no change needed |
+| Progress in status | `SD:96.45,/test.nc` | `SD:96.45,/sd/test.nc` | **path rewritten** to `/test.nc` |
+| Job end | `SD Print Finish!` | `[MSG:INFO: Program End]` | **`SD Print Finish!` added** by the pendant channel |
 
 ## Commands sent by the pendant
 
@@ -139,8 +158,7 @@ so it can be paused/stopped like any job. It contains no `M3`.
 > On a plasma machine that would fire the torch, so TheSpace never does it.
 
 ### Notes for the first hardware test
-- FluidNC answers `ok` to `[ESP220]` (run SD file) only **when the job ends**. The MKS
-  firmware may answer immediately - check whether the pendant still shows the job screen.
+- `[ESP220]`: MKS never answers `ok` (capture), so FluidNC's `ok` at job end is harmless.
 - FluidNC's startup banner is `Grbl 4.x [FluidNC v4.x ...]`, not `Grbl_ESP32`. If the pendant
   does not connect, the banner is the first suspect.
 

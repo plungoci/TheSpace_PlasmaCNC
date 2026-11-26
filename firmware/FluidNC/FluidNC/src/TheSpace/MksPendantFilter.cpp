@@ -104,6 +104,25 @@ namespace TheSpace {
             start = bar + 1;
         }
 
+        // Job progress: FluidNC "SD:96.45,/sd/test.nc" -> MKS "SD:96.45,/test.nc"
+        for (auto& f : fields) {
+            if (!starts_with(f, "SD:")) {
+                continue;
+            }
+            size_t comma = f.find(',');
+            if (comma == std::string::npos) {
+                continue;
+            }
+            std::string path = f.substr(comma + 1);
+            while (!path.empty() && path[0] == '/') {
+                path.erase(0, 1);
+            }
+            if (starts_with(path, "sd/") || starts_with(path, "native_sd/")) {
+                path.erase(0, path.find('/') + 1);
+            }
+            f = f.substr(0, comma + 1) + "/" + path;
+        }
+
         int mpos = -1, wpos = -1;
         for (size_t i = 0; i < fields.size(); ++i) {
             if (starts_with(fields[i], "MPos:")) {
@@ -115,7 +134,12 @@ namespace TheSpace {
             }
         }
         if ((mpos < 0) == (wpos < 0)) {
-            return line;  // both present (or neither): nothing to add
+            // both present (or neither): nothing to add, but the SD path may have changed
+            std::string out = "<";
+            for (size_t i = 0; i < fields.size(); ++i) {
+                out += (i ? "|" : "") + fields[i];
+            }
+            return out + ">";
         }
 
         const bool          have_m = mpos >= 0;

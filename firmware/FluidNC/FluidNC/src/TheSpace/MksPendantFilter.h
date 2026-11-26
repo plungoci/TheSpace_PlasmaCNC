@@ -45,6 +45,7 @@ namespace TheSpace {
     // The MKS firmware reports BOTH MPos and WPos in every status report, and the
     // pendant shows both ("Working" and "Machine"). FluidNC reports one of them plus
     // WCO now and then. This adds the missing one, computed from the last WCO seen.
+    // It also rewrites the job progress path "SD:p,/sd/file" to the MKS form "SD:p,/file".
     class StatusAugmenter {
     public:
         // Returns the (possibly) augmented status line. Non-status lines are returned unchanged.

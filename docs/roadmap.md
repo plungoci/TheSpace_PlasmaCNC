@@ -18,7 +18,8 @@
 - [x] Pendant baud = 115200 (`$46=1`, MKS manual)
 - [x] Sniff pendant <-> board UART on stock firmware - boot banner, `$I`, `?` polling, jog, MPos+WPos status (docs/captures)
 - [x] `mks_pendant`: drop the pendant's boot banner, send MPos+WPos in every status report
-- [ ] Capture SD list / frame / run on stock firmware ([ESP220] ok timing)
+- [x] Capture SD list / run on stock firmware - pendant does not need `ok` after `[ESP220]`; progress path rewritten to MKS form
+- [ ] Capture frame (`[ESP801]`) on stock firmware (optional)
 - [x] Full flash backup of the original MKS firmware - board V2.2 and pendant (`backups/2026-11-25_stock_mks`)
 - [ ] Test Z driver (TMC2209 in J25, SW1: 1 ON, 2 ON, 3 OFF = 16 microsteps) on the original firmware - needs `$45=2` (XYZ mode)
 - [ ] Flash FluidNC v4 (S3), load config, verify motion, limits, probe, SD card

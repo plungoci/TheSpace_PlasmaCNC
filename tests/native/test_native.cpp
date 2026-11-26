@@ -190,6 +190,16 @@ static void test_status_augmenter() {
     CHECK(a.augment("ok") == "ok");
     CHECK(a.augment("[MSG:INFO: hello]") == "[MSG:INFO: hello]");
 
+    // Job progress path, FluidNC -> MKS form (from the 2026-11-26 capture: "SD:96.45,/test.nc")
+    r = a.augment("<Run|MPos:37.700,10.000,0.000|FS:1000,0|SD:96.45,/sd/test.nc>");
+    CHECK(r == "<Run|MPos:37.700,10.000,0.000|WPos:36.700,8.000,-0.500|FS:1000,0|SD:96.45,/test.nc>");
+    r = a.augment("<Run|MPos:1.000,2.000,3.000|WPos:1.000,2.000,3.000|FS:1000,0|SD:50.00,native_sd/test.nc>");
+    CHECK(r == "<Run|MPos:1.000,2.000,3.000|WPos:1.000,2.000,3.000|FS:1000,0|SD:50.00,/test.nc>");
+    r = a.augment("<Run|MPos:1.000,2.000,3.000|WPos:1.000,2.000,3.000|SD:50.00,/test.nc>");
+    CHECK(r == "<Run|MPos:1.000,2.000,3.000|WPos:1.000,2.000,3.000|SD:50.00,/test.nc>");
+    r = a.augment("<Run|MPos:1.000,2.000,3.000|WPos:1.000,2.000,3.000|SD:50.00,/sd/parts/a.nc>");
+    CHECK(r == "<Run|MPos:1.000,2.000,3.000|WPos:1.000,2.000,3.000|SD:50.00,/parts/a.nc>");
+
     // No WCO known yet -> offset 0
     StatusAugmenter fresh;
     r = fresh.augment("<Idle|MPos:1.000,2.000,3.000|FS:0,0>");
