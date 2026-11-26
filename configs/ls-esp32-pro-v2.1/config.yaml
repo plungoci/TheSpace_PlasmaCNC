@@ -89,7 +89,7 @@ probe:
 uart1:
   txd_pin: gpio.17
   rxd_pin: gpio.18
-  baud: 115200                       # to be confirmed (MKS firmware setting "uart baud rate")
+  baud: 115200                       # MKS default ($46=1)
   mode: 8N1
 
 mks_pendant:

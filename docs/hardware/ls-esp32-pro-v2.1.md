@@ -103,6 +103,27 @@ The screen/pendant port is **disabled by default**. Enable it once over USB
 (115200 baud, e.g. LaserGRBL or any serial terminal): `$47=1`, then power-cycle.
 When connected, the pendant shows a link icon in the upper right corner.
 
+## MKS stock firmware - special settings (from the MKS manual)
+
+Not shown in LaserGRBL or the WebUI by default; set them with `$NN=value`.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `$40` | 0 | Controllable 5 V output: 0 disable, 1 enable |
+| `$41` | 1 | Buzzer: 0 disable, 1 enable |
+| `$42` | 0 | Probe (tilt detection): 0 disable, 1 high sensitivity, 2 low sensitivity |
+| `$43` | 0 | Flame detection: 0 disable, 1 high, 2 low sensitivity |
+| `$44` | 0 | Air assist: 0 disable, 1 enable (min 0 %), 2 enable (min 5 %) |
+| `$45` | 0 | **Motion mode: 0 XY only, 1 roller (Z = rotary), 2 XYZ** - set `$45=2` for a Z axis |
+| `$46` | 1 | **Pendant UART baud: 1 = 115200, 2 = 250000** |
+| `$47` | 0 | **Offline display / pendant: 0 disable, 1 enable** |
+| `$48` | 0 | Door detection: 0 disable, 1 high, 2 low sensitivity |
+| `$50` | 0 | WiFi mode: 0 disable, 1 AP, 2 STA, 3 Bluetooth |
+| `$51` / `$52` | ESP_WIFI / 12345678 | AP SSID / password |
+| `$53` / `$54` | My_SSID / My_password | STA SSID / password |
+
+Power-cycle after changing `$45`, `$46` or `$47`.
+
 ## Board revisions
 The schematic used here is V2.1_002. V2.2 boards (also ESP32-S3-WROOM-1U) are in use;
 no V2.2 schematic is published yet - verify pins before relying on this table for V2.2.

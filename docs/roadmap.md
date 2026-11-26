@@ -14,9 +14,10 @@
 
 ## Phase 1 - First power-up
 - [x] Pendant connects on stock MKS firmware after `$47=1` + power cycle (link icon shown) - 2026-11-25
-- [ ] Sniff pendant <-> board UART on stock firmware (baud, startup handshake, [ESP220] ok timing)
+- [x] Pendant baud = 115200 (`$46=1`, MKS manual)
+- [ ] Sniff pendant <-> board UART on stock firmware (startup handshake, [ESP220] ok timing)
 - [x] Full flash backup of the original MKS firmware - board V2.2 and pendant (`backups/2026-11-25_stock_mks`)
-- [ ] Test Z driver (TMC2209 in J25) on the original firmware
+- [ ] Test Z driver (TMC2209 in J25, SW1: 1 ON, 2 ON, 3 OFF = 16 microsteps) on the original firmware - needs `$45=2` (XYZ mode)
 - [ ] Flash FluidNC v4 (S3), load config, verify motion, limits, probe, SD card
 - [ ] Confirm pendant UART baud rate, run `tools/pendant_sim.py --port ... all` on the pendant connector
 - [ ] Test the real pendant: jog -> position -> home -> SD list -> frame -> run (check `[ESP220]` ok timing)

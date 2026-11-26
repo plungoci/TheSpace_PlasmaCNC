@@ -8,7 +8,7 @@ It talks to the controller over **UART1** (IO17/IO18 on the controller) using
 Source: strings extracted from the pendant firmware
 `LAS_YD ESP TFT35 V4.1_V1.0.6_20240314_Bate.bin` (version string `YD_V2.0.0_20240314`)
 and from the MKS controller firmware (Grbl_ESP32 based).
-Baud rate is **not yet confirmed** (115200 expected) - to be measured on hardware.
+Baud rate: **115200** (MKS setting `$46=1`, the default; `$46=2` = 250000).
 
 ## Commands sent by the pendant
 
@@ -105,7 +105,6 @@ so it can be paused/stopped like any job. It contains no `M3`.
   firmware may answer immediately - check whether the pendant still shows the job screen.
 - FluidNC's startup banner is `Grbl 4.x [FluidNC v4.x ...]`, not `Grbl_ESP32`. If the pendant
   does not connect, the banner is the first suspect.
-- Baud rate is still unconfirmed (115200 assumed).
 
 ### Testing
 - `tests/native`: unit tests for the line filter and the bounds scanner (`make -C tests/native`).
