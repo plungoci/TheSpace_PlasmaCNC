@@ -13,6 +13,7 @@
 - [ ] `plasma` module: `$IHS` command (testable on the posix build)
 
 ## Phase 1 - First power-up
+- [x] On-board X/Y TMC2209 are UART-controlled on V2.2: `$X/Current/Run` / `$Y/Current/Run` 0.25 -> 0.8 A made the motors clearly quieter (2026-11-26). Stock default 0.25 A is too low.
 - [x] Pendant connects on stock MKS firmware after `$47=1` + power cycle (link icon shown) - 2026-11-25
 - [x] Pendant baud = 115200 (`$46=1`, MKS manual)
 - [ ] Sniff pendant <-> board UART on stock firmware (startup handshake, [ESP220] ok timing)
@@ -28,7 +29,7 @@
 - [ ] Arc OK input on Flame input (IO36) - wire it and set `arc_ok_pin: gpio.36:low`
 
 ## Phase 3 - Advanced
-- [ ] Single-wire UART to on-board TMC2209 X/Y (IO19 / IO20)
+- [ ] Single-wire UART to on-board TMC2209 X/Y (IO19 / IO20) - **needed**: confirmed on V2.2 that the drivers are configured over UART (current, microsteps); without it FluidNC cannot set their current
 - [ ] Sensorless homing X/Y (DIAG already routed to X-/Y- via R123/R122)
 - [ ] THC: arc voltage (isolated divider / module) -> ADC, Z correction, corner lock
 - [ ] Optional: custom firmware for the pendant (ESP32 + LVGL)

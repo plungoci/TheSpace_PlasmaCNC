@@ -48,6 +48,14 @@ and are **not** covered here.
 | IO48 | - | free on the module, unprotected |
 | TXD0 / RXD0 | USB serial | console |
 
+## On-board X/Y drivers - current
+
+The X and Y TMC2209 are configured **over UART** by the firmware (confirmed on a V2.2 board,
+2026-11-26: changing `$X/Current/Run` changes the motor behaviour). The stock MKS default is
+**0.25 A run / 0.125 A hold**, far too low for most NEMA17 motors - noisy, vibrating, weak.
+Set 70-85 % of the motor's rated current, e.g. `$X/Current/Run=0.8`, `$Y/Current/Run=0.8`.
+Both Y motor connectors share one driver (parallel) - the current is split between two motors.
+
 ## Connectors
 
 ### Pendant - J12 (header) / J14 (RJ)
