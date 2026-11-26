@@ -25,6 +25,7 @@
 //           uart_num: 2
 //           uart_gpio: 19      # this driver's PDN_UART pin
 //           addr: 3            # MS1 and MS2 are pulled high on the MKS board
+//           shared_address_write_only: true   # no readback on this board (see .cpp)
 //           run_amps: 0.8
 //           ...                # every tmc_2209 option works the same
 
@@ -44,6 +45,10 @@ namespace TheSpace {
             handler.item("uart_gpio", _uart_gpio, -1, 48);
             TMC2209Driver::group(handler);
         }
+
+        // Each driver has its own wire, so two drivers at the same address are not really
+        // shared: skip tmc_2209's "same UART + same address" checks.
+        void validate() override { MotorDrivers::TrinamicUartDriver::validate(); }
 
         void afterParse() override {
             TMC2209Driver::afterParse();

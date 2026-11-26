@@ -30,10 +30,13 @@ namespace TheSpace {
 
         void release_pin(int gpio) {
 #if defined(ESP_PLATFORM)
-            // Disconnect the UART TX signal and leave the line as a pulled-up input.
+            // Disconnect the UART and hold the line high (UART idle level), like the MKS
+            // firmware does. The board has a 20k pull-down on PDN_UART, so a released pin
+            // would sit low and look like a break to the driver.
             esp_rom_gpio_connect_out_signal(gpio, SIG_GPIO_OUT_IDX, false, false);
-            gpio_set_direction(gpio_num_t(gpio), GPIO_MODE_INPUT);
-            gpio_pullup_en(gpio_num_t(gpio));
+            gpio_ll_od_disable(&GPIO, uint32_t(gpio));
+            gpio_set_level(gpio_num_t(gpio), 1);
+            gpio_set_direction(gpio_num_t(gpio), GPIO_MODE_OUTPUT);
 #endif
         }
 
@@ -45,12 +48,13 @@ namespace TheSpace {
             if (routed[uart_num] >= 0) {
                 release_pin(routed[uart_num]);
             }
-            // Direction first (it resets the pad's output source), then connect the UART,
-            // then make the pad open-drain with pull-up so the TMC2209 can drive the line.
-            gpio_set_direction(gpio_num_t(gpio), GPIO_MODE_INPUT_OUTPUT_OD);
+            // Push-pull TX through the board's series resistor (R124/...), RX on the same pad.
+            // Open-drain does not work here: the 20k pull-down on PDN_UART beats the ESP32's
+            // weak internal pull-up, so the line never reaches a valid high level.
+            // Without an open-drain line the driver cannot answer, so the drivers are used
+            // write-only (shared_address_write_only: true in config.yaml).
             uart_pins(uart_num, pinnum_t(gpio), pinnum_t(gpio), pinnum_t(-1), pinnum_t(-1));
-            gpio_ll_od_enable(&GPIO, uint32_t(gpio));  // open-drain without touching the signal routing
-            gpio_pullup_en(gpio_num_t(gpio));
+            gpio_ll_od_disable(&GPIO, uint32_t(gpio));
 #endif
             routed[uart_num] = gpio;
         }

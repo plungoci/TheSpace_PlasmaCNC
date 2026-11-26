@@ -20,16 +20,23 @@ Then copy your calibrated `steps_per_mm` into `config.yaml`, upload it (Setup ->
 and restart (`$Bye`). Upload the config **after** the firmware: the old firmware does not know
 `tmc_2209_1wire` and would not load it.
 
+## Write-only (fix 2026-11-26, second build)
+First build: `X Axis TMC driver not detected - expected 0x21 got 0x0` - the open-drain line
+could not reach a high level (20k pull-down on PDN_UART vs the ESP32 internal pull-up), so
+nothing was written either. Now TX is push-pull through the series resistor and the drivers are
+used write-only (`shared_address_write_only: true`), like the MKS firmware.
+
 ## Check
 
 `$SS` (or the console at boot) should show for X and Y:
 
 ```
-[MSG:INFO:    x motor0 1-wire UART2 GPIO19 Addr:3 Step:gpio.16 ...]
-[MSG:INFO:    x motor0 driver test passed]
+[MSG:INFO:     tmc_2209_1wire 1-wire UART2 GPIO19 Addr:3 Step:gpio.16 ...]
+[MSG:WARN: X Axis TMC2209 shared-address write-only mode; UART readback and diagnostics are unavailable]
 ```
 
-`driver test failed` means no UART answer: check the address (0-3) and that the build is this one.
+The warning is expected (no readback). The real check is the motor: changing `run_amps` and
+restarting must change the holding torque / noise.
 
 ## Notes
 - `run_amps: 0.8`, `hold_amps: 0.4`, StealthChop (quiet, like Z). If the motors are weak at

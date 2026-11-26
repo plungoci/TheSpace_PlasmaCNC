@@ -39,6 +39,7 @@ axes:
         uart_num: 2
         uart_gpio: 19
         addr: 3                      # MS1/MS2 pulled high on the board
+        shared_address_write_only: true  # this board cannot read the driver back (20k pull-down on PDN)
         r_sense_ohms: 0.110
         run_amps: 0.8                # Tronxy 4240-23; raise slowly if it skips
         hold_amps: 0.4
@@ -68,6 +69,7 @@ axes:
         uart_num: 2
         uart_gpio: 20
         addr: 3                      # MS1/MS2 pulled high on the board
+        shared_address_write_only: true  # this board cannot read the driver back (20k pull-down on PDN)
         r_sense_ohms: 0.110
         run_amps: 0.8                # Tronxy 4240-23; raise slowly if it skips
         hold_amps: 0.4
